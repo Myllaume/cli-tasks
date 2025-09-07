@@ -29,3 +29,11 @@ Puis j'ai executé la commande suivante.
 ```bash
 mvn clean install
 ```
+
+### Execution des tests
+
+J'ai executé des tests avec JUnit, par l'intermédiaire de Maven, avec la commande suivante.
+
+```bash
+mvn test
+```

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.io.*;
 
 public class TaskRepository {
-    private String filePath;
-    private String header = "description,completed";
+    private final String filePath;
+    private final String header = "description,completed";
     private ArrayList<CsvError> errors = new ArrayList<>();
 
     public TaskRepository(String filePath) {
@@ -61,7 +61,7 @@ public class TaskRepository {
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
 
             String currentLine;
             int currentLineNumber = 1;
@@ -76,11 +76,10 @@ public class TaskRepository {
         }
 
         if (!inputFile.delete()) {
-            System.out.println("Could not delete original file");
-            return;
+            throw new IOException("Could not delete original file");
         }
         if (!tempFile.renameTo(inputFile)) {
-            System.out.println("Could not rename temp file");
+            throw new IOException("Could not rename temp file");
         }
     }
 
@@ -89,7 +88,7 @@ public class TaskRepository {
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
 
             String currentLine;
             int currentLineNumber = 0;
@@ -106,11 +105,10 @@ public class TaskRepository {
         }
 
         if (!inputFile.delete()) {
-            System.out.println("Could not delete original file");
-            return;
+            throw new IOException("Could not delete original file");
         }
         if (!tempFile.renameTo(inputFile)) {
-            System.out.println("Could not rename temp file");
+            throw new IOException("Could not rename temp file");
         }
     }
 

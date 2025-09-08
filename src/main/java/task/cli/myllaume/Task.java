@@ -1,7 +1,7 @@
 package task.cli.myllaume;
 
 public class Task {
-    private int id;
+    private final int id;
     private String description;
     private boolean completed;
 

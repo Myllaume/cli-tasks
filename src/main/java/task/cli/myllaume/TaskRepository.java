@@ -83,7 +83,7 @@ public class TaskRepository {
         }
     }
 
-    public void updateLine(int lineNumber, Task newTask) throws IOException {
+    public void updateLine(int lineNumber, String description, boolean completed) throws IOException {
         File inputFile = new File(this.filePath);
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
@@ -95,6 +95,7 @@ public class TaskRepository {
 
             while ((currentLine = reader.readLine()) != null) {
                 if (currentLineNumber == lineNumber) {
+                    Task newTask = new Task(lineNumber, description, completed);
                     writer.write(newTask.toCsv());
                 } else {
                     writer.write(currentLine);

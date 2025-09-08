@@ -112,8 +112,7 @@ public class TaskRepositoryTest {
         assertEquals(2, tasks.size());
         assertEquals("Faire la vaisselle", tasks.get(1).getDescription());
 
-        Task updatedTask = new Task(2, "Updated task", true);
-        repo.updateLine(2, updatedTask);
+        repo.updateLine(2, "Updated task", true);
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
         ArrayList<Task> tasksAfter = repoAfter.read();

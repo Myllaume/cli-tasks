@@ -54,4 +54,18 @@ public class TaskTest {
         String expected = "1 - Faire les courses [✓]";
         assertEquals(expected, task.toString());
     }
+
+    @Test
+    public void testToCsvNotCompleted() {
+        Task task = new Task(1, "Faire les courses", false);
+        String expected = "Faire les courses,false";
+        assertEquals(expected, task.toCsv());
+    }
+
+    @Test
+    public void testToCsvCompleted() {
+        Task task = new Task(1, "Faire les courses", true);
+        String expected = "Faire les courses,true";
+        assertEquals(expected, task.toCsv());
+    }
 }

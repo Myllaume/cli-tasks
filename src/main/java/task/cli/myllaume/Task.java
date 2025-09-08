@@ -35,4 +35,8 @@ public class Task {
     public String toString() {
         return id + " - " + description + " [" + (completed ? "✓" : "✗") + "]";
     }
+
+    public String toCsv() {
+        return description + "," + (completed ? "true" : "false");
+    }
 }

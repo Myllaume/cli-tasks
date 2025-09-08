@@ -1,5 +1,9 @@
 # Tasks CLI
 
+## To Do
+
+- Dans le catch du read(), tu pourrais ajouter une erreur à la liste errors pour signaler les problèmes d’accès au fichier (ex : fichier introuvable).
+
 ## Changelog
 
 ### Initialisation

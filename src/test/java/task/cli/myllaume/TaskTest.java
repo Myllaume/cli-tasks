@@ -44,14 +44,14 @@ public class TaskTest {
     @Test
     public void testToStringNotCompleted() {
         Task task = new Task(1, "Faire les courses", false);
-        String expected = "1 - Faire les courses [✗]";
+        String expected = "Faire les courses [✗]";
         assertEquals(expected, task.toString());
     }
 
     @Test
     public void testToStringCompleted() {
         Task task = new Task(1, "Faire les courses", true);
-        String expected = "1 - Faire les courses [✓]";
+        String expected = "Faire les courses [✓]";
         assertEquals(expected, task.toString());
     }
 

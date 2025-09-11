@@ -33,7 +33,7 @@ public class Task {
 
     @Override
     public String toString() {
-        return id + " - " + description + " [" + (completed ? "✓" : "✗") + "]";
+        return description + " [" + (completed ? "✓" : "✗") + "]";
     }
 
     public String toCsv() {

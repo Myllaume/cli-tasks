@@ -12,6 +12,18 @@ public class TaskRepository {
         this.filePath = filePath;
     }
 
+    public void init(boolean overwrite) {
+        File file = new File(this.filePath);
+        if (!file.exists() || overwrite) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write(this.header);
+                writer.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public ArrayList<Task> read() {
         ArrayList<Task> tasks = new ArrayList<>();
 
@@ -42,6 +54,7 @@ public class TaskRepository {
                 lineNumber++;
             }
         } catch (IOException e) {
+            errors.add(new CsvError(1, "Fichier introuvable."));
             return tasks;
         }
         return tasks;

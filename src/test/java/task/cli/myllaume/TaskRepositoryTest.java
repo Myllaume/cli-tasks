@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.nio.file.Path;
 
 public class TaskRepositoryTest {
     @Test
@@ -93,8 +94,8 @@ public class TaskRepositoryTest {
         repo.removeLine(2);
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasksAfter = repoAfter.read();
-        assertEquals(1, tasksAfter.size());
+        ArrayList<Task> tasksAfterRemove = repoAfter.read();
+        assertEquals(1, tasksAfterRemove.size());
     }
 
     @Test()
@@ -115,8 +116,46 @@ public class TaskRepositoryTest {
         repo.updateLine(2, "Updated task", true);
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasksAfter = repoAfter.read();
-        assertEquals(2, tasksAfter.size());
-        assertEquals("Updated task", tasksAfter.get(1).getDescription());
+        ArrayList<Task> tasksAfterUpdate = repoAfter.read();
+        assertEquals(2, tasksAfterUpdate.size());
+        assertEquals("Updated task", tasksAfterUpdate.get(1).getDescription());
+    }
+
+    @Test()
+    public void testInit() throws IOException {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepository repo = new TaskRepository(tempDir.toString() + "/tasks.csv");
+        repo.init(false);
+
+        ArrayList<Task> tasks = repo.read();
+        assertEquals(0, tasks.size());
+        assertEquals(0, repo.getErrors().size());
+
+        repo.addLineAtEnd(new Task(1, "Test", false));
+        ArrayList<Task> tasksAfterAdd = repo.read();
+        assertEquals(1, tasksAfterAdd.size());
+    }
+
+    @Test()
+    public void testInitWithOverwrite() throws IOException {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepository repo = new TaskRepository(tempDir.toString() + "/tasks.csv");
+        repo.init(false);
+
+        ArrayList<Task> tasks = repo.read();
+        assertEquals(0, tasks.size());
+        assertEquals(0, repo.getErrors().size());
+
+        repo.addLineAtEnd(new Task(1, "Test", false));
+        ArrayList<Task> tasksAfterAdd = repo.read();
+        assertEquals(1, tasksAfterAdd.size());
+
+        repo.init(true);
+        ArrayList<Task> tasksAfterOverwrite = repo.read();
+        assertEquals(0, tasksAfterOverwrite.size());
     }
 }

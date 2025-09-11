@@ -41,3 +41,20 @@ J'ai executé des tests avec JUnit, par l'intermédiaire de Maven, avec la comma
 ```bash
 mvn test
 ```
+
+### Executer les tests et compiler le code
+
+1. clean : Supprime le dossier target (où Maven met les fichiers compilés et les anciens artefacts), pour repartir sur une base propre.
+2. package : Compile le code source, exécute les tests, puis crée le fichier JAR (ou WAR) de ton projet dans le dossier target.
+
+```bash
+mvn clean package
+```
+
+### Utiliser le CLI
+
+```bash
+cd target
+java -jar java-cli-tasks-1.0-SNAPSHOT.jar --help
+java -jar java-cli-tasks-1.0-SNAPSHOT.jar --version
+```

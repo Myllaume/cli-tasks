@@ -17,10 +17,14 @@ public class App implements Runnable {
 
         repo.init(false);
 
-        CommandList commandList = new CommandList(repo);
-
         CommandLine cmd = new CommandLine(new App());
+
+        CommandList commandList = new CommandList(repo);
         cmd.addSubcommand("list", commandList);
+        CommandAdd commandAdd = new CommandAdd(repo);
+        cmd.addSubcommand("add", commandAdd);
+        CommandRemove commandRemove = new CommandRemove(repo);
+        cmd.addSubcommand("remove", commandRemove);
 
         int exitCode = cmd.execute(args);
         System.exit(exitCode);

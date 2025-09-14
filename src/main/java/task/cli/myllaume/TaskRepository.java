@@ -74,17 +74,25 @@ public class TaskRepository {
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
 
             String currentLine;
             int currentLineNumber = 1;
+
+            boolean found = false;
 
             while ((currentLine = reader.readLine()) != null) {
                 if (currentLineNumber != lineNumber) {
                     writer.write(currentLine);
                     writer.newLine();
+                } else {
+                    found = true;
                 }
                 currentLineNumber++;
+            }
+
+            if (!found) {
+                throw new IOException("Line number " + lineNumber + " does not exist.");
             }
         }
 
@@ -101,7 +109,7 @@ public class TaskRepository {
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
 
             String currentLine;
             int currentLineNumber = 0;

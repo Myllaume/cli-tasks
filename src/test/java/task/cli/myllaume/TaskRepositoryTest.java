@@ -99,6 +99,32 @@ public class TaskRepositoryTest {
     }
 
     @Test()
+    public void testRemoveLineFail() throws IOException {
+        File tempFile = File.createTempFile("tasks", ".csv");
+        tempFile.deleteOnExit();
+
+        Files.copy(
+                Paths.get("src/test/resources/valid-tasks.csv"),
+                tempFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
+        ArrayList<Task> tasks = repo.read();
+        assertEquals(2, tasks.size());
+
+        try {
+            repo.removeLine(99);
+            fail("Should throw IOException.");
+        } catch (IOException e) {
+            assertEquals("Line number 99 does not exist.", e.getMessage());
+        }
+
+        TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
+        ArrayList<Task> tasksAfterRemove = repoAfter.read();
+        assertEquals(2, tasksAfterRemove.size());
+    }
+
+    @Test()
     public void testUpdateLine() throws IOException {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();

@@ -76,11 +76,13 @@ public class TaskRepository {
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
                 BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
 
-            String currentLine;
-            int currentLineNumber = 1;
+            String currentLine = reader.readLine();
+            writer.write(currentLine);
+            writer.newLine();
 
             boolean found = false;
 
+            int currentLineNumber = 1;
             while ((currentLine = reader.readLine()) != null) {
                 if (currentLineNumber != lineNumber) {
                     writer.write(currentLine);
@@ -88,6 +90,7 @@ public class TaskRepository {
                 } else {
                     found = true;
                 }
+
                 currentLineNumber++;
             }
 

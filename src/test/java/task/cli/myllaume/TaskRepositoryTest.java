@@ -91,11 +91,13 @@ public class TaskRepositoryTest {
         ArrayList<Task> tasks = repo.read();
         assertEquals(2, tasks.size());
 
-        repo.removeLine(2);
+        repo.removeLine(1);
+        repo.removeLine(1);
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
         ArrayList<Task> tasksAfterRemove = repoAfter.read();
-        assertEquals(1, tasksAfterRemove.size());
+        assertEquals(0, repoAfter.getErrors().size());
+        assertEquals(0, tasksAfterRemove.size());
     }
 
     @Test()

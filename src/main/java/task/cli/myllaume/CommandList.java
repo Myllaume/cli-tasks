@@ -26,7 +26,7 @@ public class CommandList implements Runnable {
     }
 
     private void multiline() {
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
 
         ArrayList<String> lines = new ArrayList<String>();
         lines.add("Liste des tâches");
@@ -40,7 +40,7 @@ public class CommandList implements Runnable {
     }
 
     private void count() {
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
 
         ArrayList<Task> tasksCompleted = new ArrayList<Task>();
         ArrayList<Task> tasksUncompleted = new ArrayList<Task>();

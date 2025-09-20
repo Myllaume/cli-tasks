@@ -17,7 +17,7 @@ public class TaskRepositoryTest {
     @Test
     public void testReadValidLines() {
         TaskRepository repo = new TaskRepository("src/test/resources/valid-tasks.csv");
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
 
         assertEquals(2, tasks.size());
     }
@@ -26,7 +26,7 @@ public class TaskRepositoryTest {
     public void testReadWithInvalidLines() {
         TaskRepository repo = new TaskRepository("src/test/resources/invalid-tasks.csv");
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(1, tasks.size());
 
         ArrayList<CsvError> errors = repo.getErrors();
@@ -39,7 +39,7 @@ public class TaskRepositoryTest {
     public void testReadWithInvalidHeader() {
         TaskRepository repo = new TaskRepository("src/test/resources/invalid-header-tasks.csv");
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(0, tasks.size());
 
         ArrayList<CsvError> errors = repo.getErrors();
@@ -52,7 +52,7 @@ public class TaskRepositoryTest {
     public void testReadWithUnknownFile() {
         TaskRepository repo = new TaskRepository("src/test/resources/unknown.csv");
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(0, tasks.size());
     }
 
@@ -71,7 +71,7 @@ public class TaskRepositoryTest {
 
         repo.addLineAtEnd(task);
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(1, tasks.size());
         assertEquals("Test tâche", tasks.get(0).getDescription());
         assertFalse(tasks.get(0).getCompleted());
@@ -88,14 +88,14 @@ public class TaskRepositoryTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(2, tasks.size());
 
         repo.removeLine(1);
         repo.removeLine(1);
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasksAfterRemove = repoAfter.read();
+        ArrayList<Task> tasksAfterRemove = repoAfter.getTasks();
         assertEquals(0, repoAfter.getErrors().size());
         assertEquals(0, tasksAfterRemove.size());
     }
@@ -111,7 +111,7 @@ public class TaskRepositoryTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(2, tasks.size());
 
         try {
@@ -122,7 +122,7 @@ public class TaskRepositoryTest {
         }
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasksAfterRemove = repoAfter.read();
+        ArrayList<Task> tasksAfterRemove = repoAfter.getTasks();
         assertEquals(2, tasksAfterRemove.size());
     }
 
@@ -137,14 +137,14 @@ public class TaskRepositoryTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(2, tasks.size());
         assertEquals("Faire la vaisselle", tasks.get(1).getDescription());
 
         repo.updateLine(2, "Updated task", true);
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasksAfterUpdate = repoAfter.read();
+        ArrayList<Task> tasksAfterUpdate = repoAfter.getTasks();
         assertEquals(2, tasksAfterUpdate.size());
         assertEquals("Updated task", tasksAfterUpdate.get(1).getDescription());
     }
@@ -157,12 +157,12 @@ public class TaskRepositoryTest {
         TaskRepository repo = new TaskRepository(tempDir.toString() + "/tasks.csv");
         repo.init(false);
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(0, tasks.size());
         assertEquals(0, repo.getErrors().size());
 
         repo.addLineAtEnd(new Task(1, "Test", false));
-        ArrayList<Task> tasksAfterAdd = repo.read();
+        ArrayList<Task> tasksAfterAdd = repo.getTasks();
         assertEquals(1, tasksAfterAdd.size());
     }
 
@@ -174,16 +174,16 @@ public class TaskRepositoryTest {
         TaskRepository repo = new TaskRepository(tempDir.toString() + "/tasks.csv");
         repo.init(false);
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(0, tasks.size());
         assertEquals(0, repo.getErrors().size());
 
         repo.addLineAtEnd(new Task(1, "Test", false));
-        ArrayList<Task> tasksAfterAdd = repo.read();
+        ArrayList<Task> tasksAfterAdd = repo.getTasks();
         assertEquals(1, tasksAfterAdd.size());
 
         repo.init(true);
-        ArrayList<Task> tasksAfterOverwrite = repo.read();
+        ArrayList<Task> tasksAfterOverwrite = repo.getTasks();
         assertEquals(0, tasksAfterOverwrite.size());
     }
 }

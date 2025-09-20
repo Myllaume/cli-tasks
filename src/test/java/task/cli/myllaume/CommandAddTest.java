@@ -41,7 +41,7 @@ public class CommandAddTest {
         assertEquals("", err.toString());
         assertEquals("La tâche Test a été ajoutée.\n", out.toString());
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(1, tasks.size());
         Task task = tasks.get(0);
         assertEquals("Test", task.getDescription());
@@ -78,7 +78,7 @@ public class CommandAddTest {
         assertEquals("", err.toString());
         assertEquals("La tâche Test a été ajoutée.\n", out.toString());
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(1, tasks.size());
         Task task = tasks.get(0);
         assertEquals("Test", task.getDescription());

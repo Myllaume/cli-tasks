@@ -42,7 +42,7 @@ public class CommandRemoveTest {
         assertEquals("", err.toString());
         assertEquals("La tâche 2 a été supprimée.\n", out.toString());
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(0, repo.getErrors().size());
         assertEquals(1, tasks.size());
     }
@@ -78,7 +78,7 @@ public class CommandRemoveTest {
         assertEquals("", err.toString());
         assertEquals("Erreur lors de la suppression de la tâche 100.\n", out.toString());
 
-        ArrayList<Task> tasks = repo.read();
+        ArrayList<Task> tasks = repo.getTasks();
         assertEquals(0, repo.getErrors().size());
         assertEquals(2, tasks.size());
     }

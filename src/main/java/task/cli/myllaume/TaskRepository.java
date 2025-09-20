@@ -24,7 +24,7 @@ public class TaskRepository {
         }
     }
 
-    public ArrayList<Task> read() {
+    private ArrayList<Task> read() {
         ArrayList<Task> tasks = new ArrayList<>();
 
         errors.clear();
@@ -58,6 +58,10 @@ public class TaskRepository {
             return tasks;
         }
         return tasks;
+    }
+
+    public ArrayList<Task> getTasks() {
+        return this.read();
     }
 
     public void addLineAtEnd(Task task) {

@@ -11,6 +11,14 @@ public class App implements Runnable {
     }
 
     public static void main(String[] args) {
+        String configDir = new AppDirs().getConfigDir();
+        AppConfigRepository appConfig = new AppConfigRepository(configDir);
+        try {
+            appConfig.init();
+        } catch (Exception e) {
+            System.out.println("Erreur lors de l'initialisation de la configuration : " + e.getMessage());
+        }
+
         String dataDir = new AppDirs().getDataDir();
         String filePath = dataDir + "/tasks.csv";
         TaskRepository repo = new TaskRepository(filePath);

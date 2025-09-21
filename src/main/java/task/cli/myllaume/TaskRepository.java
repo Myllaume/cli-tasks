@@ -2,6 +2,7 @@ package task.cli.myllaume;
 
 import java.util.ArrayList;
 import java.io.*;
+import java.text.Normalizer;
 
 public class TaskRepository {
     private final String filePath;
@@ -12,14 +13,12 @@ public class TaskRepository {
         this.filePath = filePath;
     }
 
-    public void init(boolean overwrite) {
+    public void init(boolean overwrite) throws IOException {
         File file = new File(this.filePath);
         if (!file.exists() || overwrite) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 writer.write(this.header);
                 writer.newLine();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -64,12 +63,33 @@ public class TaskRepository {
         return this.read();
     }
 
-    public void addLineAtEnd(Task task) {
+    public ArrayList<Task> searchTasks(String fulltext, int maxCount) {
+        ArrayList<Task> allTasks = this.read();
+        ArrayList<Task> matchedTasks = new ArrayList<>();
+
+        String normalizedFulltext = TaskRepository.normalizeString(fulltext);
+
+        int analysedCount = 0;
+
+        for (Task task : allTasks) {
+            String normalizedDescription = TaskRepository.normalizeString(task.getDescription());
+
+            if (normalizedDescription.contains(normalizedFulltext)) {
+                matchedTasks.add(task);
+                analysedCount++;
+            }
+            if (analysedCount >= maxCount) {
+                break;
+            }
+        }
+        return matchedTasks;
+
+    }
+
+    public void addLineAtEnd(Task task) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(this.filePath, true))) {
             writer.write(task.toCsv());
             writer.newLine();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -151,12 +171,28 @@ public class TaskRepository {
             return null;
         }
 
-        try {
-            String description = parts[0];
-            boolean completed = Boolean.parseBoolean(parts[1]);
-            return new Task(lineNumber, description, completed);
-        } catch (NumberFormatException e) {
-            return null;
+        String description = parts[0];
+        boolean completed = Boolean.parseBoolean(parts[1]);
+        return new Task(lineNumber, description, completed);
+
+    }
+
+    /**
+     * Normalize a string: keep only letters and digits, lowercase, remove accents
+     * and spaces.
+     * Useful for insensitive search and comparison.
+     *
+     * @param input The input string to normalize.
+     * @return The normalized string (letters and digits only, lowercase, no
+     *         accents, no spaces).
+     */
+    private static String normalizeString(String input) {
+        if (input == null) {
+            return "";
         }
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("[^\\p{Alnum}]", "");
+        normalized = normalized.toLowerCase();
+        return normalized;
     }
 }

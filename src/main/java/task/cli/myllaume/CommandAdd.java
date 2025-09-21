@@ -1,5 +1,7 @@
 package task.cli.myllaume;
 
+import java.io.IOException;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -20,8 +22,12 @@ public class CommandAdd implements Runnable {
 
     @Override
     public void run() {
-        repo.addLineAtEnd(new Task(1, description, completed));
-        System.out.println("La tâche " + description + " a été ajoutée.");
+        try {
+            repo.addLineAtEnd(new Task(1, description, completed));
+            System.out.println("La tâche " + description + " a été ajoutée.");
+        } catch (IOException e) {
+            System.out.println("La tâche " + description + " n'a pas été ajoutée: " + e.getMessage());
+        }
     }
 
 }

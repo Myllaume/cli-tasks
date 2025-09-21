@@ -3,9 +3,7 @@ package task.cli.myllaume;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -61,12 +59,8 @@ public class TaskRepositoryTest {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-            writer.write("description,completed");
-            writer.newLine();
-        }
-
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
+        repo.init(true);
         Task task = new Task(1, "Test tâche", false);
 
         repo.addLineAtEnd(task);
@@ -185,5 +179,75 @@ public class TaskRepositoryTest {
         repo.init(true);
         ArrayList<Task> tasksAfterOverwrite = repo.getTasks();
         assertEquals(0, tasksAfterOverwrite.size());
+    }
+
+    @Test()
+    public void testSearchTask() throws IOException {
+        File tempFile = File.createTempFile("tasks", ".csv");
+        tempFile.deleteOnExit();
+
+        Files.copy(
+                Paths.get("src/test/resources/many.csv"),
+                tempFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
+        ArrayList<Task> tasks = repo.getTasks();
+        assertEquals(52, tasks.size());
+
+        ArrayList<Task> searchResults = repo.searchTasks("test", 100);
+        assertEquals(9, searchResults.size());
+    }
+
+    @Test()
+    public void testSearchTaskWithMaxCount() throws IOException {
+        File tempFile = File.createTempFile("tasks", ".csv");
+        tempFile.deleteOnExit();
+
+        Files.copy(
+                Paths.get("src/test/resources/many.csv"),
+                tempFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
+        ArrayList<Task> tasks = repo.getTasks();
+        assertEquals(52, tasks.size());
+
+        ArrayList<Task> searchResults = repo.searchTasks("test", 5);
+        assertEquals(5, searchResults.size());
+    }
+
+    @Test()
+    public void testSearchTaskIgnoreAccents() throws IOException {
+        File tempFile = File.createTempFile("tasks", ".csv");
+        tempFile.deleteOnExit();
+
+
+        TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
+        repo.init(true);
+        repo.addLineAtEnd(new Task(1, "tâche avèc des mots àccentés", false));
+        ArrayList<Task> tasks = repo.getTasks();
+        assertEquals(1, tasks.size());
+
+        assertEquals(1, repo.searchTasks("tâche", 100).size());
+        assertEquals(1, repo.searchTasks("tache", 100).size());
+    }
+
+    @Test()
+    public void testSearchTaskOnlyLowercaseLettersNumbers() throws IOException {
+        File tempFile = File.createTempFile("tasks", ".csv");
+        tempFile.deleteOnExit();
+
+        TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
+        repo.init(true);
+        repo.addLineAtEnd(new Task(1, "Write 26 integration-tests", false));
+        ArrayList<Task> tasks = repo.getTasks();
+        assertEquals(1, tasks.size());
+
+        assertEquals(1, repo.searchTasks("Write 26", 100).size());
+        assertEquals(1, repo.searchTasks("write 26", 100).size());
+        assertEquals(1, repo.searchTasks("write26", 100).size());
+        assertEquals(1, repo.searchTasks("integrationtest", 100).size());
+        assertEquals(1, repo.searchTasks("integration-tests", 100).size());
     }
 }

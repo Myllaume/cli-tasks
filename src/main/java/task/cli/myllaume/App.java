@@ -22,8 +22,13 @@ public class App implements Runnable {
         String dataDir = new AppDirs().getDataDir();
         String filePath = dataDir + "/tasks.csv";
         TaskRepository repo = new TaskRepository(filePath);
+        
+        try {
+            repo.init(false);
+        } catch (Exception e) {
+            System.out.println("Erreur lors de l'initialisation du fichier de tâches : " + e.getMessage());
+        }
 
-        repo.init(false);
 
         CommandLine cmd = new CommandLine(new App());
 

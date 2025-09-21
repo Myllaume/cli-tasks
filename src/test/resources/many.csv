@@ -1,0 +1,53 @@
+description,completed
+Implement user authentication,true
+Write unit tests for Task class,true
+Refactor App.java for readability,false
+Fix bug in TaskRepository,true
+Update dependencies in pom.xml,true
+Document API endpoints,true
+Optimize database queries,true
+Add logging to CommandAdd,true
+Implement error handling,false
+Write integration tests,true
+Create Dockerfile,true
+Set up CI pipeline,true
+Configure Maven Surefire plugin,true
+Add Javadoc comments,true
+Implement CSV import feature,true
+Write TaskConfig validation,false
+Improve exception messages,true
+Add support for JSON export,true
+Implement pagination in list command,true
+Refactor CommandRemove logic,true
+Add input validation,true
+Write tests for edge cases,false
+Update README with usage examples,false
+Implement role-based access control,true
+Optimize memory usage,true
+Add support for environment variables,true
+Implement backup feature,true
+Write performance benchmarks,true
+Refactor AppConfigRepository,true
+Add support for multiple users,true
+Implement undo functionality,false
+Write tests for invalid CSV headers,true
+Improve CLI argument parsing,true
+Add color output to CLI,true
+Implement scheduled tasks,true
+Write Task serialization logic,true
+Add support for YAML config,true
+Refactor Task class,true
+Implement command history,false
+Write tests for TaskRepository,true
+Add support for plugins,false
+Implement notification system,true
+Write tests for notification feature,true
+Add support for recurring tasks,true
+Implement data migration,true
+Write tests for data migration,true
+Add support for custom task priorities,true
+Implement search functionality,false
+Write tests for search feature,true
+Add support for task tags,true
+Implement export to PDF,true
+Write tests for PDF export,true

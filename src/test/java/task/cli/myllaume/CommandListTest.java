@@ -70,7 +70,7 @@ public class CommandListTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals("Liste des tâches\n- Test [✗]\n", out.toString());
+        assertEquals("Liste des tâches\n- [✗] Test\n", out.toString());
     }
 
 }

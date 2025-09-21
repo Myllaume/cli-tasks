@@ -38,9 +38,18 @@ public class CommandSearch implements Runnable {
 
         ArrayList<Task> tasks = repo.searchTasks(fulltext, maxCount);
 
+        int maxIdWidth = tasks.stream()
+                .limit(maxResults)
+                .mapToInt(task -> String.valueOf(task.getId()).length())
+                .max()
+                .orElse(1);
+
         tasks.stream()
                 .limit(maxResults)
-                .forEach(task -> System.out.println(task.toString()));
+                .forEach(task -> {
+                    String idStr = String.format("%" + maxIdWidth + "d", task.getId());
+                    System.out.println(idStr + ". " + task.toString());
+                });
 
         System.out.println(
                 "Recherche terminée. Affichage de " + Math.min(maxResults, tasks.size()) + " résultats sur "

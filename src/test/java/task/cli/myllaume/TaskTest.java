@@ -7,16 +7,14 @@ public class TaskTest {
     @Test
     public void testGetDescription() {
         Task task = new Task(1, "Faire les courses", false);
-        String expected = "Faire les courses";
-        assertEquals(expected, task.getDescription());
+        assertEquals("Faire les courses", task.getDescription());
     }
 
     @Test
     public void testSetDescription() {
         Task task = new Task(1, "Faire les courses", false);
         task.setDescription("Faire la vaisselle");
-        String expected = "Faire la vaisselle";
-        assertEquals(expected, task.getDescription());
+        assertEquals("Faire la vaisselle", task.getDescription());
     }
 
     @Test
@@ -44,28 +42,24 @@ public class TaskTest {
     @Test
     public void testToStringNotCompleted() {
         Task task = new Task(1, "Faire les courses", false);
-        String expected = "Faire les courses [✗]";
-        assertEquals(expected, task.toString());
+        assertEquals("[✗] Faire les courses", task.toString());
     }
 
     @Test
     public void testToStringCompleted() {
         Task task = new Task(1, "Faire les courses", true);
-        String expected = "Faire les courses [✓]";
-        assertEquals(expected, task.toString());
+        assertEquals("[✓] Faire les courses", task.toString());
     }
 
     @Test
     public void testToCsvNotCompleted() {
         Task task = new Task(1, "Faire les courses", false);
-        String expected = "Faire les courses,false";
-        assertEquals(expected, task.toCsv());
+        assertEquals("Faire les courses,false", task.toCsv());
     }
 
     @Test
     public void testToCsvCompleted() {
         Task task = new Task(1, "Faire les courses", true);
-        String expected = "Faire les courses,true";
-        assertEquals(expected, task.toCsv());
+        assertEquals("Faire les courses,true", task.toCsv());
     }
 }

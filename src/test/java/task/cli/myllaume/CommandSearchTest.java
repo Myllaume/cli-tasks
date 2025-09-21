@@ -48,11 +48,11 @@ public class CommandSearchTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals("Write unit tests for Task class [✓]\n" +
-                "Write integration tests [✓]\n" +
-                "Write tests for edge cases [✗]\n" +
-                "Write tests for invalid CSV headers [✓]\n" +
-                "Write tests for TaskRepository [✓]\n" +
+        assertEquals(" 3. [✓] Write unit tests for Task class\n" +
+                "11. [✓] Write integration tests\n" +
+                "23. [✗] Write tests for edge cases\n" +
+                "33. [✓] Write tests for invalid CSV headers\n" +
+                "41. [✓] Write tests for TaskRepository\n" +
                 "Recherche terminée. Affichage de 5 résultats sur 9 trouvés.\n", out.toString());
     }
 
@@ -88,8 +88,8 @@ public class CommandSearchTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals("Improve CLI argument parsing [✓]\n" +
-                "Add color output to CLI [✓]\n" +
+        assertEquals("34. [✓] Improve CLI argument parsing\n" +
+                "35. [✓] Add color output to CLI\n" +
                 "Recherche terminée. Affichage de 2 résultats sur 2 trouvés.\n", out.toString());
     }
 
@@ -164,9 +164,9 @@ public class CommandSearchTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals("Write unit tests for Task class [✓]\n" +
-                "Write integration tests [✓]\n" +
-                "Write tests for edge cases [✗]\n" +
+        assertEquals(" 3. [✓] Write unit tests for Task class\n" +
+                "11. [✓] Write integration tests\n" +
+                "23. [✗] Write tests for edge cases\n" +
                 "Recherche terminée. Affichage de 3 résultats sur 5 trouvés.\n", out.toString());
     }
 
@@ -204,7 +204,9 @@ public class CommandSearchTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals("Le nombre maximum de résultats affiché ne peut pas être inférieur au nombre maximum de résultats à analyser.\n", out.toString());
+        assertEquals(
+                "Le nombre maximum de résultats affiché ne peut pas être inférieur au nombre maximum de résultats à analyser.\n",
+                out.toString());
     }
 
 }

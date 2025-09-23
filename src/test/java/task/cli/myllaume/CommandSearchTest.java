@@ -32,7 +32,7 @@ public class CommandSearchTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(52, tasks.size());
 
         try {
@@ -48,7 +48,7 @@ public class CommandSearchTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals(" 3. [✓] Write unit tests for Task class\n" +
+        assertEquals(" 3. [✓] Write unit tests for TaskCsv class\n" +
                 "11. [✓] Write integration tests\n" +
                 "23. [✗] Write tests for edge cases\n" +
                 "33. [✓] Write tests for invalid CSV headers\n" +
@@ -72,7 +72,7 @@ public class CommandSearchTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(52, tasks.size());
 
         try {
@@ -109,7 +109,7 @@ public class CommandSearchTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(52, tasks.size());
 
         try {
@@ -146,7 +146,7 @@ public class CommandSearchTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(52, tasks.size());
 
         try {
@@ -164,7 +164,7 @@ public class CommandSearchTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals(" 3. [✓] Write unit tests for Task class\n" +
+        assertEquals(" 3. [✓] Write unit tests for TaskCsv class\n" +
                 "11. [✓] Write integration tests\n" +
                 "23. [✗] Write tests for edge cases\n" +
                 "Recherche terminée. Affichage de 3 résultats sur 5 trouvés.\n", out.toString());
@@ -186,7 +186,7 @@ public class CommandSearchTest {
                 StandardCopyOption.REPLACE_EXISTING);
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(52, tasks.size());
 
         try {

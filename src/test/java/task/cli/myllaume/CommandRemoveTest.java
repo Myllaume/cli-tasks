@@ -24,8 +24,8 @@ public class CommandRemoveTest {
         String filePath = tempDir.toString() + "/tasks.csv";
         TaskRepository repo = new TaskRepository(filePath);
         repo.init(false);
-        repo.addLineAtEnd(new Task(1, "One", false));
-        repo.addLineAtEnd(new Task(2, "Two", true));
+        repo.addLineAtEnd(new TaskCsv(1, "One", false));
+        repo.addLineAtEnd(new TaskCsv(2, "Two", true));
 
         try {
             System.setErr(new PrintStream(err));
@@ -42,7 +42,7 @@ public class CommandRemoveTest {
         assertEquals("", err.toString());
         assertEquals("La tâche 2 a été supprimée.\n", out.toString());
 
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(0, repo.getErrors().size());
         assertEquals(1, tasks.size());
     }
@@ -60,8 +60,8 @@ public class CommandRemoveTest {
         String filePath = tempDir.toString() + "/tasks.csv";
         TaskRepository repo = new TaskRepository(filePath);
         repo.init(false);
-        repo.addLineAtEnd(new Task(1, "One", false));
-        repo.addLineAtEnd(new Task(2, "Two", true));
+        repo.addLineAtEnd(new TaskCsv(1, "One", false));
+        repo.addLineAtEnd(new TaskCsv(2, "Two", true));
 
         try {
             System.setErr(new PrintStream(err));
@@ -78,7 +78,7 @@ public class CommandRemoveTest {
         assertEquals("", err.toString());
         assertEquals("Erreur lors de la suppression de la tâche 100.\n", out.toString());
 
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
         assertEquals(0, repo.getErrors().size());
         assertEquals(2, tasks.size());
     }

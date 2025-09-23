@@ -209,6 +209,35 @@ public class TaskRepositorySqliteTest {
     }
 
     @Test
+    public void testCountImportFromCsv() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString() + "/";
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.importFromCsv("src/test/resources/many.csv");
+        int count = repo.countTasks();
+        assertEquals(52, count);
+    }
+
+    @Test
+    public void testSearchTasks() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString() + "/";
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.importFromCsv("src/test/resources/many.csv");
+        ArrayList<Task> tasks = repo.searchTasks("test", 5);
+
+        assertEquals(5, tasks.size());
+    }
+
+    @Test
     public void testGetTaskSuccess() throws Exception {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();

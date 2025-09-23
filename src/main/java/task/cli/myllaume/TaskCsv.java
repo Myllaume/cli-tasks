@@ -1,16 +1,14 @@
 package task.cli.myllaume;
 
-public class Task {
+public class TaskCsv {
     private final int id;
     private String description;
     private boolean completed;
-    private String fulltext;
 
-    public Task(int id, String description, boolean completed, String fulltext) {
+    public TaskCsv(int id, String description, boolean completed) {
         this.id = id;
         this.description = description;
         this.completed = completed;
-        this.fulltext = fulltext;
     }
 
     public int getId() {
@@ -31,14 +29,6 @@ public class Task {
 
     public void setCompleted(boolean completed) {
         this.completed = completed;
-    }
-
-    public String getFulltext() {
-        return this.fulltext;
-    }
-
-    public void setFulltext(String fulltext) {
-        this.fulltext = fulltext;
     }
 
     @Override

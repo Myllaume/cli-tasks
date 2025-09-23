@@ -23,8 +23,8 @@ public class CommandListTest {
         String filePath = tempDir.toString() + "/tasks.csv";
         TaskRepository repo = new TaskRepository(filePath);
         repo.init(false);
-        repo.addLineAtEnd(new Task(1, "One", false));
-        repo.addLineAtEnd(new Task(1, "Two", true));
+        repo.addLineAtEnd(new TaskCsv(1, "One", false));
+        repo.addLineAtEnd(new TaskCsv(1, "Two", true));
 
         try {
             System.setErr(new PrintStream(err));
@@ -55,7 +55,7 @@ public class CommandListTest {
         String filePath = tempDir.toString() + "/tasks.csv";
         TaskRepository repo = new TaskRepository(filePath);
         repo.init(false);
-        repo.addLineAtEnd(new Task(1, "Test", false));
+        repo.addLineAtEnd(new TaskCsv(1, "Test", false));
 
         try {
             System.setErr(new PrintStream(err));

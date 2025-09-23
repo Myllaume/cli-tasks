@@ -26,11 +26,11 @@ public class CommandList implements Runnable {
     }
 
     private void multiline() {
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
 
         ArrayList<String> lines = new ArrayList<String>();
         lines.add("Liste des tâches");
-        for (Task task : tasks) {
+        for (TaskCsv task : tasks) {
             lines.add("- " + task.toString());
         }
 
@@ -40,11 +40,11 @@ public class CommandList implements Runnable {
     }
 
     private void count() {
-        ArrayList<Task> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks = repo.getTasks();
 
-        ArrayList<Task> tasksCompleted = new ArrayList<Task>();
-        ArrayList<Task> tasksUncompleted = new ArrayList<Task>();
-        for (Task task : tasks) {
+        ArrayList<TaskCsv> tasksCompleted = new ArrayList<TaskCsv>();
+        ArrayList<TaskCsv> tasksUncompleted = new ArrayList<TaskCsv>();
+        for (TaskCsv task : tasks) {
             if (!task.getCompleted()) {
                 tasksUncompleted.add(task);
             } else {

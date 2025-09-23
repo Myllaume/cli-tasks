@@ -36,7 +36,7 @@ public class CommandSearch implements Runnable {
             return;
         }
 
-        ArrayList<Task> tasks = repo.searchTasks(fulltext, maxCount);
+        ArrayList<TaskCsv> tasks = repo.searchTasks(fulltext, maxCount);
 
         int maxIdWidth = tasks.stream()
                 .limit(maxResults)

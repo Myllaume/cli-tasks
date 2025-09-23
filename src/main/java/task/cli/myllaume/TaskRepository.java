@@ -23,8 +23,8 @@ public class TaskRepository {
         }
     }
 
-    private ArrayList<Task> read() {
-        ArrayList<Task> tasks = new ArrayList<>();
+    private ArrayList<TaskCsv> read() {
+        ArrayList<TaskCsv> tasks = new ArrayList<>();
 
         errors.clear();
 
@@ -43,7 +43,7 @@ public class TaskRepository {
             lineNumber++;
 
             while ((line = reader.readLine()) != null) {
-                Task task = TaskRepository.parseCsvLine(line, lineNumber);
+                TaskCsv task = TaskRepository.parseCsvLine(line, lineNumber);
                 if (task != null) {
                     tasks.add(task);
                 } else {
@@ -59,20 +59,20 @@ public class TaskRepository {
         return tasks;
     }
 
-    public ArrayList<Task> getTasks() {
+    public ArrayList<TaskCsv> getTasks() {
         return this.read();
     }
 
-    public ArrayList<Task> searchTasks(String fulltext, int maxCount) {
-        ArrayList<Task> allTasks = this.read();
-        ArrayList<Task> matchedTasks = new ArrayList<>();
+    public ArrayList<TaskCsv> searchTasks(String fulltext, int maxCount) {
+        ArrayList<TaskCsv> allTasks = this.read();
+        ArrayList<TaskCsv> matchedTasks = new ArrayList<>();
 
-        String normalizedFulltext = TaskRepository.normalizeString(fulltext);
+        String normalizedFulltext = StringUtils.normalizeString(fulltext);
 
         int analysedCount = 0;
 
-        for (Task task : allTasks) {
-            String normalizedDescription = TaskRepository.normalizeString(task.getDescription());
+        for (TaskCsv task : allTasks) {
+            String normalizedDescription = StringUtils.normalizeString(task.getDescription());
 
             if (normalizedDescription.contains(normalizedFulltext)) {
                 matchedTasks.add(task);
@@ -86,7 +86,7 @@ public class TaskRepository {
 
     }
 
-    public void addLineAtEnd(Task task) throws IOException {
+    public void addLineAtEnd(TaskCsv task) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(this.filePath, true))) {
             writer.write(task.toCsv());
             writer.newLine();
@@ -143,7 +143,7 @@ public class TaskRepository {
 
             while ((currentLine = reader.readLine()) != null) {
                 if (currentLineNumber == lineNumber) {
-                    Task newTask = new Task(lineNumber, description, completed);
+                    TaskCsv newTask = new TaskCsv(lineNumber, description, completed);
                     writer.write(newTask.toCsv());
                 } else {
                     writer.write(currentLine);
@@ -165,7 +165,7 @@ public class TaskRepository {
         return errors;
     }
 
-    private static Task parseCsvLine(String line, int lineNumber) {
+    private static TaskCsv parseCsvLine(String line, int lineNumber) {
         String[] parts = line.split(",");
         if (parts.length != 2) {
             return null;
@@ -173,26 +173,8 @@ public class TaskRepository {
 
         String description = parts[0];
         boolean completed = Boolean.parseBoolean(parts[1]);
-        return new Task(lineNumber, description, completed);
+        return new TaskCsv(lineNumber, description, completed);
 
     }
 
-    /**
-     * Normalize a string: keep only letters and digits, lowercase, remove accents
-     * and spaces.
-     * Useful for insensitive search and comparison.
-     *
-     * @param input The input string to normalize.
-     * @return The normalized string (letters and digits only, lowercase, no
-     *         accents, no spaces).
-     */
-    private static String normalizeString(String input) {
-        if (input == null) {
-            return "";
-        }
-        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
-        normalized = normalized.replaceAll("[^\\p{Alnum}]", "");
-        normalized = normalized.toLowerCase();
-        return normalized;
-    }
 }

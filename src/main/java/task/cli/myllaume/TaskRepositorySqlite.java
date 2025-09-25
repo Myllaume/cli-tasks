@@ -17,15 +17,20 @@ public class TaskRepositorySqlite {
 
     public void init() throws Exception {
         try (Connection conn = DriverManager.getConnection(url)) {
-            Statement stmt = conn.createStatement();
-            stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS tasks (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            completed BOOLEAN NOT NULL DEFAULT 0,
-                            fulltext TEXT NOT NULL
-                        )
-                    """);
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                            CREATE TABLE IF NOT EXISTS tasks (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                name TEXT NOT NULL,
+                                completed BOOLEAN NOT NULL DEFAULT 0,
+                                fulltext TEXT NOT NULL
+                            )
+                        """);
+                // Improve concurrency and planner accuracy for SQLite
+                // stmt.execute("PRAGMA journal_mode = WAL");
+                // stmt.execute("PRAGMA synchronous = NORMAL");
+                stmt.execute("ANALYZE");
+            }
         }
     }
 
@@ -55,7 +60,7 @@ public class TaskRepositorySqlite {
     }
 
     public Task removeTask(int id) throws Exception {
-        String selectSql = "SELECT * FROM tasks WHERE id = ?";
+        String selectSql = "SELECT id, name, completed, fulltext FROM tasks WHERE id = ?";
         String deleteSql = "DELETE FROM tasks WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url);
@@ -81,7 +86,7 @@ public class TaskRepositorySqlite {
     }
 
     public Task getTask(int id) throws Exception {
-        String sql = "SELECT * FROM tasks WHERE id = ?";
+        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -101,28 +106,28 @@ public class TaskRepositorySqlite {
     }
 
     public ArrayList<Task> getTasks(int limit) throws Exception {
-        String sql = "SELECT * FROM tasks ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext FROM tasks ORDER BY name ASC LIMIT ?";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, limit);
-            ResultSet rs = pstmt.executeQuery();
-
-            ArrayList<Task> tasks = new ArrayList<>();
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("name");
-                boolean completed = rs.getBoolean("completed");
-                String fulltext = rs.getString("fulltext");
-                tasks.add(new Task(id, name, completed, fulltext));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                ArrayList<Task> tasks = new ArrayList<>();
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    String name = rs.getString("name");
+                    boolean completed = rs.getBoolean("completed");
+                    String fulltext = rs.getString("fulltext");
+                    tasks.add(new Task(id, name, completed, fulltext));
+                }
+                return tasks;
             }
-            return tasks;
         }
     }
 
     public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
-        String sql = "SELECT * FROM tasks WHERE name LIKE ? ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE fulltext LIKE ? ORDER BY name ASC LIMIT ?";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -130,17 +135,17 @@ public class TaskRepositorySqlite {
 
             pstmt.setString(1, "%" + keyword + "%");
             pstmt.setInt(2, limit);
-            ResultSet rs = pstmt.executeQuery();
-
-            ArrayList<Task> tasks = new ArrayList<>();
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("name");
-                boolean completed = rs.getBoolean("completed");
-                String fulltext = rs.getString("fulltext");
-                tasks.add(new Task(id, name, completed, fulltext));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                ArrayList<Task> tasks = new ArrayList<>();
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    String name = rs.getString("name");
+                    boolean completed = rs.getBoolean("completed");
+                    String fulltext = rs.getString("fulltext");
+                    tasks.add(new Task(id, name, completed, fulltext));
+                }
+                return tasks;
             }
-            return tasks;
         }
     }
 
@@ -181,21 +186,29 @@ public class TaskRepositorySqlite {
         return this.url;
     }
 
-    public int countTasks() throws Exception {
-        String sql = "SELECT COUNT(*) AS total FROM tasks";
-
+    private int executeCountQuery(String sql) throws Exception {
         try (Connection conn = DriverManager.getConnection(url);
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
 
             if (rs.next()) {
-                int total = rs.getInt("total");
-                System.out.println("Total tasks: " + total);
-                return total;
+                return rs.getInt("total");
             } else {
                 return 0;
             }
         }
+    }
+
+    public int countTasks() throws Exception {
+        return executeCountQuery("SELECT COUNT(*) AS total FROM tasks");
+    }
+
+    public int countTasksTodo() throws Exception {
+        return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 0");
+    }
+
+    public int countTasksDone() throws Exception {
+        return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 1");
     }
 
     public void importFromCsv(String csvPath) throws Exception {
@@ -206,8 +219,19 @@ public class TaskRepositorySqlite {
             throw new Exception("Le fichier CSV contient des erreurs, l'import est annulé.");
         }
 
-        for (TaskCsv task : tasks) {
-            this.createTask(task.getDescription(), task.getCompleted());
+        // Batch insert inside a single transaction to improve performance
+        String sql = "INSERT INTO tasks (name, completed, fulltext) VALUES (?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn.setAutoCommit(false);
+            for (TaskCsv task : tasks) {
+                pstmt.setString(1, task.getDescription());
+                pstmt.setBoolean(2, task.getCompleted());
+                pstmt.setString(3, StringUtils.normalizeString(task.getDescription()));
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
         }
     }
 }

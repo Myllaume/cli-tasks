@@ -3,7 +3,6 @@ package task.cli.myllaume;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,7 +11,7 @@ import java.util.ArrayList;
 public class CommandAddTest {
 
     @Test
-    public void testRun() throws IOException {
+    public void testRun() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -21,9 +20,9 @@ public class CommandAddTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        String filePath = tempDir.toString() + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        repo.init(false);
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
 
         try {
             System.setErr(new PrintStream(err));
@@ -41,15 +40,15 @@ public class CommandAddTest {
         assertEquals("", err.toString());
         assertEquals("La tâche Test a été ajoutée.\n", out.toString());
 
-        ArrayList<TaskCsv> tasks = repo.getTasks();
+        ArrayList<Task> tasks = repo.getTasks(10);
         assertEquals(1, tasks.size());
-        TaskCsv task = tasks.get(0);
+        Task task = tasks.get(0);
         assertEquals("Test", task.getDescription());
         assertFalse(task.getCompleted());
     }
 
     @Test
-    public void testRunCompleted() throws IOException {
+    public void testRunCompleted() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -58,9 +57,9 @@ public class CommandAddTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        String filePath = tempDir.toString() + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        repo.init(false);
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
 
         try {
             System.setErr(new PrintStream(err));
@@ -78,9 +77,9 @@ public class CommandAddTest {
         assertEquals("", err.toString());
         assertEquals("La tâche Test a été ajoutée.\n", out.toString());
 
-        ArrayList<TaskCsv> tasks = repo.getTasks();
+        ArrayList<Task> tasks = repo.getTasks(10);
         assertEquals(1, tasks.size());
-        TaskCsv task = tasks.get(0);
+        Task task = tasks.get(0);
         assertEquals("Test", task.getDescription());
         assertTrue(task.getCompleted());
     }

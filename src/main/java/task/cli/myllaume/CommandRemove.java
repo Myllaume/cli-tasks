@@ -5,9 +5,9 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "remove", description = "Retirer une tâche")
 public class CommandRemove implements Runnable {
-    private final TaskRepository repo;
+    private final TaskRepositorySqlite repo;
 
-    public CommandRemove(TaskRepository repo) {
+    public CommandRemove(TaskRepositorySqlite repo) {
         this.repo = repo;
     }
 
@@ -21,7 +21,7 @@ public class CommandRemove implements Runnable {
 
     private void removeTask() {
         try {
-            repo.removeLine(Integer.parseInt(id));
+            repo.removeTask(Integer.parseInt(id));
             System.out.println("La tâche " + id + " a été supprimée.");
         } catch (Exception e) {
             System.out.println("Erreur lors de la suppression de la tâche " + id + ".");

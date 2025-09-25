@@ -3,7 +3,6 @@ package task.cli.myllaume;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,7 +10,7 @@ import java.nio.file.Path;
 public class CommandListTest {
 
     @Test
-    public void testRunOnelineTrue() throws IOException {
+    public void testRunOnelineTrue() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -20,11 +19,11 @@ public class CommandListTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        String filePath = tempDir.toString() + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        repo.init(false);
-        repo.addLineAtEnd(new TaskCsv(1, "One", false));
-        repo.addLineAtEnd(new TaskCsv(1, "Two", true));
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+        repo.createTask("One", false);
+        repo.createTask("Two", true);
 
         try {
             System.setErr(new PrintStream(err));
@@ -43,7 +42,7 @@ public class CommandListTest {
     }
 
     @Test
-    public void testRunOnelineFalse() throws IOException {
+    public void testRunOnelineFalse() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -52,10 +51,10 @@ public class CommandListTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        String filePath = tempDir.toString() + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        repo.init(false);
-        repo.addLineAtEnd(new TaskCsv(1, "Test", false));
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+        repo.createTask("Test", false);
 
         try {
             System.setErr(new PrintStream(err));

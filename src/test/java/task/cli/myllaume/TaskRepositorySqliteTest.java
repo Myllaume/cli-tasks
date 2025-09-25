@@ -24,7 +24,7 @@ public class TaskRepositorySqliteTest {
 
         repo.init();
 
-        File dbFile = new File(dbPath + "tasks.db");
+        File dbFile = new File(dbPath + System.getProperty("file.separator") + "tasks.db");
         assertTrue(dbFile.exists());
 
     }
@@ -60,6 +60,41 @@ public class TaskRepositorySqliteTest {
         } catch (Exception e) {
             assertNotNull(e);
         }
+    }
+
+    @Test
+    public void testConstructorWithNullPath() {
+        try {
+            new TaskRepositorySqlite(null);
+            fail("Should have thrown IllegalArgumentException for null path");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Le chemin de la base de données ne peut pas être nul ou vide.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testConstructorWithEmptyPath() {
+        try {
+            new TaskRepositorySqlite("   ");
+            fail("Should have thrown IllegalArgumentException for empty path");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Le chemin de la base de données ne peut pas être nul ou vide.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testConstructorNormalizesPath() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPathWithoutSlash = tempDir.toString();
+        String dbPathWithSlash = tempDir.toString() + "/";
+
+        TaskRepositorySqlite repo1 = new TaskRepositorySqlite(dbPathWithoutSlash);
+        TaskRepositorySqlite repo2 = new TaskRepositorySqlite(dbPathWithSlash);
+
+        assertEquals(repo1.getUrl(), repo2.getUrl());
+        assertTrue(repo1.getUrl().endsWith("tasks.db"));
     }
 
     @Test

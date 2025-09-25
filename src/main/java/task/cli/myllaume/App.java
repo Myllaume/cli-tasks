@@ -20,22 +20,22 @@ public class App implements Runnable {
         }
 
         String dataDir = new AppDirs().getDataDir();
-        String filePath = dataDir + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        
-        try {
-            repo.init(false);
-        } catch (Exception e) {
-            System.out.println("Erreur lors de l'initialisation du fichier de tâches : " + e.getMessage());
-        }
-
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dataDir);
 
         CommandLine cmd = new CommandLine(new App());
+
+        try {
+            repo.init();
+        } catch (Exception e) {
+            System.out.println("Erreur lors de l'initialisation de la base de données : " + e.getMessage());
+        }
 
         CommandList commandList = new CommandList(repo);
         cmd.addSubcommand("list", commandList);
         CommandAdd commandAdd = new CommandAdd(repo);
         cmd.addSubcommand("add", commandAdd);
+        CommandSearch commandSearch = new CommandSearch(repo);
+        cmd.addSubcommand("search", commandSearch);
         CommandRemove commandRemove = new CommandRemove(repo);
         cmd.addSubcommand("remove", commandRemove);
 

@@ -12,7 +12,16 @@ public class TaskRepositorySqlite {
     private final String url;
 
     public TaskRepositorySqlite(String dbPath) {
-        this.url = "jdbc:sqlite:" + dbPath + "tasks.db";
+        if (dbPath == null || dbPath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le chemin de la base de données ne peut pas être nul ou vide.");
+        }
+
+        String normalizedPath = dbPath.trim();
+        if (!normalizedPath.endsWith(System.getProperty("file.separator"))) {
+            normalizedPath += System.getProperty("file.separator");
+        }
+
+        this.url = "jdbc:sqlite:" + normalizedPath + "tasks.db";
     }
 
     public void init() throws Exception {

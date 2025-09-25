@@ -8,9 +8,9 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "search", description = "Rechercher une tâche")
 public class CommandSearch implements Runnable {
-    private final TaskRepository repo;
+    private final TaskRepositorySqlite repo;
 
-    public CommandSearch(TaskRepository repo) {
+    public CommandSearch(TaskRepositorySqlite repo) {
         this.repo = repo;
     }
 
@@ -36,7 +36,13 @@ public class CommandSearch implements Runnable {
             return;
         }
 
-        ArrayList<TaskCsv> tasks = repo.searchTasks(fulltext, maxCount);
+        ArrayList<Task> tasks;
+        try {
+            tasks = repo.searchTasks(fulltext, maxCount);
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la recherche : " + e.getMessage());
+            return;
+        }
 
         int maxIdWidth = tasks.stream()
                 .limit(maxResults)

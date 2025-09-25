@@ -7,9 +7,9 @@ import picocli.CommandLine.Option;
 
 @Command(name = "list", description = "Lister les tâches")
 public class CommandList implements Runnable {
-    private final TaskRepository repo;
+    private final TaskRepositorySqlite repo;
 
-    public CommandList(TaskRepository repo) {
+    public CommandList(TaskRepositorySqlite repo) {
         this.repo = repo;
     }
 
@@ -26,11 +26,18 @@ public class CommandList implements Runnable {
     }
 
     private void multiline() {
-        ArrayList<TaskCsv> tasks = repo.getTasks();
+        ArrayList<Task> tasks;
+
+        try {
+            tasks = repo.getTasks(10);
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la récupération des tâches : " + e.getMessage());
+            return;
+        }
 
         ArrayList<String> lines = new ArrayList<String>();
         lines.add("Liste des tâches");
-        for (TaskCsv task : tasks) {
+        for (Task task : tasks) {
             lines.add("- " + task.toString());
         }
 
@@ -40,20 +47,17 @@ public class CommandList implements Runnable {
     }
 
     private void count() {
-        ArrayList<TaskCsv> tasks = repo.getTasks();
 
-        ArrayList<TaskCsv> tasksCompleted = new ArrayList<TaskCsv>();
-        ArrayList<TaskCsv> tasksUncompleted = new ArrayList<TaskCsv>();
-        for (TaskCsv task : tasks) {
-            if (!task.getCompleted()) {
-                tasksUncompleted.add(task);
-            } else {
-                tasksCompleted.add(task);
-            }
+        try {
+            int tasksDone = repo.countTasksDone();
+            int tasksTodo = repo.countTasksTodo();
+
+            System.out.println(
+                    "Done: " + tasksDone + " | To do: " + tasksTodo);
+        } catch (Exception e) {
+            System.out.println("Erreur lors du comptage des tâches : " + e.getMessage());
         }
 
-        System.out.println(
-                "Done: " + tasksCompleted.size() + " | To do: " + tasksUncompleted.size());
     }
 
 }

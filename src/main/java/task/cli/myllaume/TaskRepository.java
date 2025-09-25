@@ -2,7 +2,6 @@ package task.cli.myllaume;
 
 import java.util.ArrayList;
 import java.io.*;
-import java.text.Normalizer;
 
 public class TaskRepository {
     private final String filePath;

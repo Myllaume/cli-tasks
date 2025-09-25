@@ -3,7 +3,6 @@ package task.cli.myllaume;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,7 +11,7 @@ import java.util.ArrayList;
 public class CommandRemoveTest {
 
     @Test
-    public void testRun() throws IOException {
+    public void testRun() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -21,18 +20,19 @@ public class CommandRemoveTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        String filePath = tempDir.toString() + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        repo.init(false);
-        repo.addLineAtEnd(new TaskCsv(1, "One", false));
-        repo.addLineAtEnd(new TaskCsv(2, "Two", true));
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.createTask("One", false);
+        Task task2 = repo.createTask("Two", true);
 
         try {
             System.setErr(new PrintStream(err));
             System.setOut(new PrintStream(out));
 
             CommandRemove cmd = new CommandRemove(repo);
-            cmd.id = "2";
+            cmd.id = String.valueOf(task2.getId());
             cmd.run();
         } finally {
             System.setErr(oldErr);
@@ -40,15 +40,15 @@ public class CommandRemoveTest {
         }
 
         assertEquals("", err.toString());
-        assertEquals("La tâche 2 a été supprimée.\n", out.toString());
+        assertEquals("La tâche " + task2.getId() + " a été supprimée.\n", out.toString());
 
-        ArrayList<TaskCsv> tasks = repo.getTasks();
-        assertEquals(0, repo.getErrors().size());
+        ArrayList<Task> tasks = repo.getTasks(10);
         assertEquals(1, tasks.size());
+        assertEquals("One", tasks.get(0).getDescription());
     }
 
     @Test
-    public void testRunFail() throws IOException {
+    public void testRunFail() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -57,11 +57,12 @@ public class CommandRemoveTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        String filePath = tempDir.toString() + "/tasks.csv";
-        TaskRepository repo = new TaskRepository(filePath);
-        repo.init(false);
-        repo.addLineAtEnd(new TaskCsv(1, "One", false));
-        repo.addLineAtEnd(new TaskCsv(2, "Two", true));
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.createTask("One", false);
+        repo.createTask("Two", true);
 
         try {
             System.setErr(new PrintStream(err));
@@ -78,8 +79,7 @@ public class CommandRemoveTest {
         assertEquals("", err.toString());
         assertEquals("Erreur lors de la suppression de la tâche 100.\n", out.toString());
 
-        ArrayList<TaskCsv> tasks = repo.getTasks();
-        assertEquals(0, repo.getErrors().size());
+        ArrayList<Task> tasks = repo.getTasks(10);
         assertEquals(2, tasks.size());
     }
 

@@ -1,16 +1,14 @@
 package task.cli.myllaume;
 
-import java.io.IOException;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "add", description = "Ajouter une tâche")
 public class CommandAdd implements Runnable {
-    private final TaskRepository repo;
+    private final TaskRepositorySqlite repo;
 
-    public CommandAdd(TaskRepository repo) {
+    public CommandAdd(TaskRepositorySqlite repo) {
         this.repo = repo;
     }
 
@@ -23,9 +21,9 @@ public class CommandAdd implements Runnable {
     @Override
     public void run() {
         try {
-            repo.addLineAtEnd(new TaskCsv(1, description, completed));
+            repo.createTask(description, completed);
             System.out.println("La tâche " + description + " a été ajoutée.");
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("La tâche " + description + " n'a pas été ajoutée: " + e.getMessage());
         }
     }

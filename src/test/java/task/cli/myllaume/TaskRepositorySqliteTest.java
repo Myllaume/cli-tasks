@@ -273,6 +273,36 @@ public class TaskRepositorySqliteTest {
     }
 
     @Test
+    public void testSearchTasksDone() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString() + "/";
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.importFromCsv("src/test/resources/many.csv");
+        ArrayList<Task> tasks = repo.searchTasksDone("test", 100);
+
+        assertEquals(8, tasks.size());
+    }
+
+    @Test
+    public void testSearchTasksTodo() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString() + "/";
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.importFromCsv("src/test/resources/many.csv");
+        ArrayList<Task> tasks = repo.searchTasksTodo("test", 100);
+
+        assertEquals(1, tasks.size());
+    }
+
+    @Test
     public void testGetTaskSuccess() throws Exception {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
@@ -301,12 +331,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        try {
-            repo.getTask(999); // ID qui n'existe pas
-            fail("Should have thrown IllegalArgumentException for non-existent task");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Aucune tâche trouvée avec l'ID: 999", e.getMessage());
-        }
+        assertNull(repo.getTask(999));
     }
 
     @Test

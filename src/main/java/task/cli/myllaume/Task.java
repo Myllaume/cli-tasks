@@ -46,6 +46,10 @@ public class Task {
         return "[" + (completed ? "✓" : "✗") + "] " + description;
     }
 
+    public String toIdString() {
+        return (Integer.toString(id) + ". " + description);
+    }
+
     public String toCsv() {
         return description + "," + (completed ? "true" : "false");
     }

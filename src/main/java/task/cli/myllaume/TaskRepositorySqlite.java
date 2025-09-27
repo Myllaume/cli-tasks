@@ -108,7 +108,7 @@ public class TaskRepositorySqlite {
                     String fulltext = rs.getString("fulltext");
                     return new Task(id, name, completed, fulltext);
                 } else {
-                    throw new IllegalArgumentException("Aucune tâche trouvée avec l'ID: " + id);
+                    return null;
                 }
             }
         }
@@ -135,8 +135,26 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE fulltext LIKE ? ORDER BY name ASC LIMIT ?";
+    public Task getLastTask() throws Exception {
+        String sql = "SELECT id, name, completed, fulltext FROM tasks ORDER BY id DESC LIMIT 1";
+
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                boolean completed = rs.getBoolean("completed");
+                String fulltext = rs.getString("fulltext");
+                return new Task(id, name, completed, fulltext);
+            } else {
+                return null;
+            }
+        }
+    }
+
+    private ArrayList<Task> searchTasksProcess(String keyword, int limit, String sql) throws Exception {
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -158,12 +176,32 @@ public class TaskRepositorySqlite {
         }
     }
 
+    public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
+        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE fulltext LIKE ? ORDER BY name ASC LIMIT ?";
+        return searchTasksProcess(keyword, limit, sql);
+    }
+
+    public ArrayList<Task> searchTasksTodo(String keyword, int limit) throws Exception {
+        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE fulltext LIKE ? AND completed = 0 ORDER BY name ASC LIMIT ?";
+        return searchTasksProcess(keyword, limit, sql);
+    }
+
+    public ArrayList<Task> searchTasksDone(String keyword, int limit) throws Exception {
+        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE fulltext LIKE ? AND completed = 1 ORDER BY name ASC LIMIT ?";
+        return searchTasksProcess(keyword, limit, sql);
+    }
+
     public Task updateTask(int id, String name, Boolean completed) throws Exception {
+        Task existingTask = getTask(id);
+
+        if (existingTask == null) {
+            throw new IllegalArgumentException("Aucune tâche trouvée avec l'ID: " + id);
+        }
+
         if (name != null && name.trim().isEmpty()) {
             throw new IllegalArgumentException("Le nom de la tâche ne peut pas être vide.");
         }
 
-        Task existingTask = getTask(id);
         String fulltext;
 
         if (name == null) {

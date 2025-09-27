@@ -15,16 +15,16 @@ public class CommandAdd implements Runnable {
     @Parameters(index = "0", description = "Nom de la tâche")
     String description;
 
-    @Option(names = "--completed", description = "Marquer la tâche comme terminée")
+    @Option(names = "--completed", description = "Marquer la tâche créée comme terminée")
     boolean completed;
 
     @Override
     public void run() {
         try {
-            repo.createTask(description, completed);
-            System.out.println("La tâche " + description + " a été ajoutée.");
+            Task task = repo.createTask(description, completed);
+            System.out.println("La tâche '" + task.toIdString() + "' a été ajoutée.");
         } catch (Exception e) {
-            System.out.println("La tâche " + description + " n'a pas été ajoutée: " + e.getMessage());
+            System.out.println("La tâche n'a pas été ajoutée: " + e.getMessage());
         }
     }
 

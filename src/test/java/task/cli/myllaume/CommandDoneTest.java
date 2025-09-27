@@ -1,0 +1,182 @@
+package task.cli.myllaume;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class CommandDoneTest {
+
+    @Test
+    public void testRunWithId() throws Exception {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream oldErr = System.err;
+        PrintStream oldOut = System.out;
+
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        Task task = repo.createTask("Test task", false);
+
+        try {
+            System.setErr(new PrintStream(err));
+            System.setOut(new PrintStream(out));
+
+            CommandDone cmd = new CommandDone(repo);
+            cmd.id = task.getId();
+            cmd.completeLastAdded = false;
+            cmd.run();
+        } finally {
+            System.setErr(oldErr);
+            System.setOut(oldOut);
+        }
+
+        assertEquals("", err.toString());
+        assertEquals("Tâche '1. Test task' marquée comme terminée.\n", out.toString());
+
+        Task updatedTask = repo.getTask(task.getId());
+        assertTrue(updatedTask.getCompleted());
+    }
+
+    @Test
+    public void testRunWithLastOption() throws Exception {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream oldErr = System.err;
+        PrintStream oldOut = System.out;
+
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        repo.createTask("First task", false);
+        Task lastTask = repo.createTask("Last task", false);
+        assertFalse(lastTask.getCompleted());
+
+        try {
+            System.setErr(new PrintStream(err));
+            System.setOut(new PrintStream(out));
+
+            CommandDone cmd = new CommandDone(repo);
+            cmd.completeLastAdded = true;
+            cmd.run();
+        } finally {
+            System.setErr(oldErr);
+            System.setOut(oldOut);
+        }
+
+        assertEquals("", err.toString());
+        assertEquals("Tâche '2. Last task' marquée comme terminée.\n", out.toString());
+
+        Task updatedLastTask = repo.getTask(lastTask.getId());
+        assertTrue(updatedLastTask.getCompleted());
+    }
+
+    @Test
+    public void testRunWithAlreadyCompletedTask() throws Exception {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream oldErr = System.err;
+        PrintStream oldOut = System.out;
+
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        Task task = repo.createTask("Completed task", true);
+
+        try {
+            System.setErr(new PrintStream(err));
+            System.setOut(new PrintStream(out));
+
+            CommandDone cmd = new CommandDone(repo);
+            cmd.id = task.getId();
+            cmd.completeLastAdded = false;
+            cmd.run();
+        } finally {
+            System.setErr(oldErr);
+            System.setOut(oldOut);
+        }
+
+        assertEquals("", err.toString());
+        assertEquals("Tâche '1. Completed task' est déjà terminée.\n", out.toString());
+
+        Task updatedTask = repo.getTask(task.getId());
+        assertTrue(updatedTask.getCompleted());
+    }
+
+    @Test
+    public void testRunWithNonExistentId() throws Exception {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream oldErr = System.err;
+        PrintStream oldOut = System.out;
+
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        try {
+            System.setErr(new PrintStream(err));
+            System.setOut(new PrintStream(out));
+
+            CommandDone cmd = new CommandDone(repo);
+            cmd.id = 999; // ID inexistant
+            cmd.completeLastAdded = false;
+            cmd.run();
+        } finally {
+            System.setErr(oldErr);
+            System.setOut(oldOut);
+        }
+
+        assertEquals("", err.toString());
+        assertEquals("Aucune tâche trouvée à marquer comme terminée.\n", out.toString());
+    }
+
+    @Test
+    public void testRunWithLastOptionButNoTasks() throws Exception {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream oldErr = System.err;
+        PrintStream oldOut = System.out;
+
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        repo.init();
+
+        try {
+            System.setErr(new PrintStream(err));
+            System.setOut(new PrintStream(out));
+
+            CommandDone cmd = new CommandDone(repo);
+            cmd.completeLastAdded = true;
+            cmd.run();
+        } finally {
+            System.setErr(oldErr);
+            System.setOut(oldOut);
+        }
+
+        assertEquals("", err.toString());
+        assertEquals("Aucune tâche trouvée à marquer comme terminée.\n", out.toString());
+    }
+
+}

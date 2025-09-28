@@ -53,4 +53,13 @@ public class Task {
     public String toCsv() {
         return description + "," + (completed ? "true" : "false");
     }
+
+    static public Task fromSqlResult(ResultSet sqlResult) throws SQLException {
+        int id = sqlResult.getInt("id");
+        String description = sqlResult.getString("name");
+        boolean completed = sqlResult.getBoolean("completed");
+        String fulltext = sqlResult.getString("fulltext");
+        return new Task(id, description, completed, fulltext);
+    }
+
 }

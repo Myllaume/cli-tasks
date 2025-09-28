@@ -2,6 +2,12 @@ package task.cli.myllaume;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 public class TaskTest {
     @Test
@@ -77,4 +83,36 @@ public class TaskTest {
         Task task = new Task(1, "Faire les courses", true, "fairelescourses");
         assertEquals("Faire les courses,true", task.toCsv());
     }
+
+    @Test
+    public void testFromSqlResultWithRealDatabase() throws Exception {
+        Path tempDir = Files.createTempDirectory("test_fromSqlResult");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        Task originalTask = repo.createTask("Tâche de test SQL", true);
+
+        String url = repo.getUrl();
+        String sql = "SELECT id, name, completed, fulltext FROM tasks WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, originalTask.getId());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                assertTrue(rs.next());
+
+                Task taskFromSql = Task.fromSqlResult(rs);
+
+                assertNotNull(taskFromSql);
+                assertEquals(originalTask.getId(), taskFromSql.getId());
+                assertEquals(originalTask.getDescription(), taskFromSql.getDescription());
+                assertEquals(originalTask.getCompleted(), taskFromSql.getCompleted());
+                assertEquals(originalTask.getFulltext(), taskFromSql.getFulltext());
+            }
+        }
+    }
+
 }

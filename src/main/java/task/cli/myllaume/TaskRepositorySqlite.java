@@ -69,28 +69,22 @@ public class TaskRepositorySqlite {
     }
 
     public Task removeTask(int id) throws Exception {
-        String selectSql = "SELECT id, name, completed, fulltext FROM tasks WHERE id = ?";
         String deleteSql = "DELETE FROM tasks WHERE id = ?";
 
+        Task task = getTask(id);
+        if (task == null) {
+            throw new IllegalArgumentException("Aucune tâche trouvée avec l'ID: " + id);
+        }
+
         try (Connection conn = DriverManager.getConnection(url);
-                PreparedStatement selectPstmt = conn.prepareStatement(selectSql);
                 PreparedStatement deletePstmt = conn.prepareStatement(deleteSql)) {
 
-            selectPstmt.setInt(1, id);
-            try (ResultSet rs = selectPstmt.executeQuery()) {
-                if (rs.next()) {
-                    String name = rs.getString("name");
-                    boolean completed = rs.getBoolean("completed");
-                    String fulltext = rs.getString("fulltext");
-
-                    deletePstmt.setInt(1, id);
-                    deletePstmt.executeUpdate();
-
-                    return new Task(id, name, completed, fulltext);
-                } else {
-                    throw new IllegalArgumentException("Aucune tâche trouvée avec l'ID: " + id);
-                }
+            deletePstmt.setInt(1, id);
+            int affected = deletePstmt.executeUpdate();
+            if (affected == 0) {
+                throw new IllegalArgumentException("Cannot find task was about to delete");
             }
+            return task;
         }
     }
 
@@ -103,10 +97,7 @@ public class TaskRepositorySqlite {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    String name = rs.getString("name");
-                    boolean completed = rs.getBoolean("completed");
-                    String fulltext = rs.getString("fulltext");
-                    return new Task(id, name, completed, fulltext);
+                    return Task.fromSqlResult(rs);
                 } else {
                     return null;
                 }
@@ -124,11 +115,7 @@ public class TaskRepositorySqlite {
             try (ResultSet rs = pstmt.executeQuery()) {
                 ArrayList<Task> tasks = new ArrayList<>();
                 while (rs.next()) {
-                    int id = rs.getInt("id");
-                    String name = rs.getString("name");
-                    boolean completed = rs.getBoolean("completed");
-                    String fulltext = rs.getString("fulltext");
-                    tasks.add(new Task(id, name, completed, fulltext));
+                    tasks.add(Task.fromSqlResult(rs));
                 }
                 return tasks;
             }
@@ -143,11 +130,7 @@ public class TaskRepositorySqlite {
                 ResultSet rs = pstmt.executeQuery()) {
 
             if (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("name");
-                boolean completed = rs.getBoolean("completed");
-                String fulltext = rs.getString("fulltext");
-                return new Task(id, name, completed, fulltext);
+                return Task.fromSqlResult(rs);
             } else {
                 return null;
             }
@@ -165,11 +148,7 @@ public class TaskRepositorySqlite {
             try (ResultSet rs = pstmt.executeQuery()) {
                 ArrayList<Task> tasks = new ArrayList<>();
                 while (rs.next()) {
-                    int id = rs.getInt("id");
-                    String name = rs.getString("name");
-                    boolean completed = rs.getBoolean("completed");
-                    String fulltext = rs.getString("fulltext");
-                    tasks.add(new Task(id, name, completed, fulltext));
+                    tasks.add(Task.fromSqlResult(rs));
                 }
                 return tasks;
             }

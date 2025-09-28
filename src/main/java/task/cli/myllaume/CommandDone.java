@@ -44,7 +44,7 @@ public class CommandDone implements Runnable {
 
             for (Task task : tasksToComplete) {
                 if (!task.getCompleted()) {
-                    repo.updateTask(task.getId(), null, true);
+                    repo.updateTask(task.getId(), null, true, null);
                     System.out.println("Tâche '" + task.toIdString() + "' marquée comme terminée.");
                 } else {
                     System.out.println("Tâche '" + task.toIdString() + "' est déjà terminée.");

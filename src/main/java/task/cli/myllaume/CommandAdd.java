@@ -18,10 +18,13 @@ public class CommandAdd implements Runnable {
     @Option(names = "--completed", description = "Marquer la tâche créée comme terminée")
     boolean completed;
 
+    @Option(names = "--priority", description = "Priorité de la tâche (1-5)", defaultValue = "1")
+    int priority;
+
     @Override
     public void run() {
         try {
-            Task task = repo.createTask(description, completed);
+            Task task = repo.createTask(description, completed, TaskPriority.fromLevel(priority));
             System.out.println("La tâche '" + task.toIdString() + "' a été ajoutée.");
         } catch (Exception e) {
             System.out.println("La tâche n'a pas été ajoutée: " + e.getMessage());

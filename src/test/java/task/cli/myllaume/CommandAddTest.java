@@ -1,6 +1,9 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import picocli.CommandLine;
+
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -11,7 +14,7 @@ import java.util.ArrayList;
 public class CommandAddTest {
 
     @Test
-    public void testRun() throws Exception {
+    public void testRunWithDefaultOptions() throws Exception {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream oldErr = System.err;
@@ -29,8 +32,7 @@ public class CommandAddTest {
             System.setOut(new PrintStream(out));
 
             CommandAdd cmd = new CommandAdd(repo);
-            cmd.description = "Test";
-            cmd.completed = false;
+            new CommandLine(cmd).parseArgs("Test");
             cmd.run();
         } finally {
             System.setErr(oldErr);
@@ -45,6 +47,7 @@ public class CommandAddTest {
         Task task = tasks.get(0);
         assertEquals("Test", task.getDescription());
         assertFalse(task.getCompleted());
+        assertEquals(TaskPriority.LOW, task.getPriority());
     }
 
     @Test
@@ -68,6 +71,7 @@ public class CommandAddTest {
             CommandAdd cmd = new CommandAdd(repo);
             cmd.description = "Test";
             cmd.completed = true;
+            cmd.priority = 3;
             cmd.run();
         } finally {
             System.setErr(oldErr);
@@ -82,6 +86,7 @@ public class CommandAddTest {
         Task task = tasks.get(0);
         assertEquals("Test", task.getDescription());
         assertTrue(task.getCompleted());
+        assertEquals(TaskPriority.HIGH, task.getPriority());
     }
 
 }

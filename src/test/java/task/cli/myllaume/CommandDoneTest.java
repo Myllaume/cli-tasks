@@ -23,7 +23,7 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Test task", false);
+        Task task = repo.createTask("Test task", false, TaskPriority.LOW);
 
         try {
             System.setErr(new PrintStream(err));
@@ -59,8 +59,8 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        repo.createTask("First task", false);
-        Task lastTask = repo.createTask("Last task", false);
+        Task firstTask = repo.createTask("First task", false, TaskPriority.LOW);
+        Task lastTask = repo.createTask("Last task", false, TaskPriority.HIGH);
         assertFalse(lastTask.getCompleted());
 
         try {
@@ -78,6 +78,8 @@ public class CommandDoneTest {
         assertEquals("", err.toString());
         assertEquals("Tâche '2. Last task' marquée comme terminée.\n", out.toString());
 
+        Task updatedFirstTask = repo.getTask(firstTask.getId());
+        assertFalse(updatedFirstTask.getCompleted());
         Task updatedLastTask = repo.getTask(lastTask.getId());
         assertTrue(updatedLastTask.getCompleted());
     }
@@ -96,7 +98,7 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Completed task", true);
+        Task task = repo.createTask("Completed task", true, TaskPriority.LOW);
 
         try {
             System.setErr(new PrintStream(err));

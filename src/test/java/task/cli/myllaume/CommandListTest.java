@@ -22,8 +22,8 @@ public class CommandListTest {
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
-        repo.createTask("One", false);
-        repo.createTask("Two", true);
+        repo.createTask("One", false, TaskPriority.LOW);
+        repo.createTask("Two", true, TaskPriority.LOW);
 
         try {
             System.setErr(new PrintStream(err));
@@ -54,7 +54,7 @@ public class CommandListTest {
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
-        repo.createTask("Test", false);
+        repo.createTask("Test", false, TaskPriority.LOW);
 
         try {
             System.setErr(new PrintStream(err));

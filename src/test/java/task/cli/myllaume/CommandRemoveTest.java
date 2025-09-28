@@ -24,8 +24,8 @@ public class CommandRemoveTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        repo.createTask("One", false);
-        Task task2 = repo.createTask("Two", true);
+        repo.createTask("One", false, TaskPriority.LOW);
+        Task task2 = repo.createTask("Two", true, TaskPriority.LOW);
 
         try {
             System.setErr(new PrintStream(err));
@@ -61,8 +61,8 @@ public class CommandRemoveTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        repo.createTask("One", false);
-        repo.createTask("Two", true);
+        repo.createTask("One", false, TaskPriority.LOW);
+        repo.createTask("Two", true, TaskPriority.LOW);
 
         try {
             System.setErr(new PrintStream(err));

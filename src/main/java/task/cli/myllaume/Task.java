@@ -1,16 +1,21 @@
 package task.cli.myllaume;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class Task {
     private final int id;
     private String description;
     private boolean completed;
     private String fulltext;
+    private TaskPriority priority;
 
-    public Task(int id, String description, boolean completed, String fulltext) {
+    public Task(int id, String description, boolean completed, String fulltext, TaskPriority priority) {
         this.id = id;
         this.description = description;
         this.completed = completed;
         this.fulltext = fulltext;
+        this.priority = priority;
     }
 
     public int getId() {
@@ -23,6 +28,14 @@ public class Task {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public TaskPriority getPriority() {
+    return priority;
+    }
+
+    public void setPriority(TaskPriority priority) {
+    this.priority = priority;
     }
 
     public boolean getCompleted() {
@@ -59,7 +72,8 @@ public class Task {
         String description = sqlResult.getString("name");
         boolean completed = sqlResult.getBoolean("completed");
         String fulltext = sqlResult.getString("fulltext");
-        return new Task(id, description, completed, fulltext);
+        int priority = sqlResult.getInt("priority");
+        return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority));
     }
 
 }

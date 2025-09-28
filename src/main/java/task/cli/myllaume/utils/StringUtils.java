@@ -1,4 +1,4 @@
-package task.cli.myllaume;
+package task.cli.myllaume.utils;
 
 import java.text.Normalizer;
 

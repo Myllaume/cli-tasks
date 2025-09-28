@@ -1,10 +1,15 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.csv.CsvError;
+import task.cli.myllaume.csv.LineNotExistsException;
+import task.cli.myllaume.csv.TaskCsv;
+import task.cli.myllaume.csv.TaskRepository;
+
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -13,7 +18,7 @@ import java.nio.file.Path;
 
 public class TaskRepositoryTest {
     @Test
-    public void testReadValidLines() {
+    public void testReadValidLines() throws Exception {
         TaskRepository repo = new TaskRepository("src/test/resources/valid-tasks.csv");
         ArrayList<TaskCsv> tasks = repo.getTasks();
 
@@ -21,7 +26,7 @@ public class TaskRepositoryTest {
     }
 
     @Test
-    public void testReadWithInvalidLines() {
+    public void testReadWithInvalidLines() throws Exception {
         TaskRepository repo = new TaskRepository("src/test/resources/invalid-tasks.csv");
 
         ArrayList<TaskCsv> tasks = repo.getTasks();
@@ -34,7 +39,7 @@ public class TaskRepositoryTest {
     }
 
     @Test
-    public void testReadWithInvalidHeader() {
+    public void testReadWithInvalidHeader() throws Exception {
         TaskRepository repo = new TaskRepository("src/test/resources/invalid-header-tasks.csv");
 
         ArrayList<TaskCsv> tasks = repo.getTasks();
@@ -47,15 +52,21 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testReadWithUnknownFile() {
+    public void testReadWithUnknownFile() throws Exception {
         TaskRepository repo = new TaskRepository("src/test/resources/unknown.csv");
 
-        ArrayList<TaskCsv> tasks = repo.getTasks();
-        assertEquals(0, tasks.size());
+        try {
+
+            repo.getTasks();
+            fail("Should have thrown IllegalArgumentException for empty name");
+        } catch (Exception e) {
+            assertEquals("Le fichier n'existe pas : src/test/resources/unknown.csv", e.getMessage());
+        }
+
     }
 
     @Test()
-    public void testAddLineAtEnd() throws IOException {
+    public void testAddLineAtEnd() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
@@ -72,7 +83,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testRemoveLine() throws IOException {
+    public void testRemoveLine() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
@@ -95,7 +106,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testRemoveLineFail() throws IOException {
+    public void testRemoveLineFail() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
@@ -110,9 +121,10 @@ public class TaskRepositoryTest {
 
         try {
             repo.removeLine(99);
-            fail("Should throw IOException.");
-        } catch (IOException e) {
-            assertEquals("Line number 99 does not exist.", e.getMessage());
+            fail("Should throw ErrorLineNotExists.");
+        } catch (LineNotExistsException e) {
+            assertTrue(e instanceof LineNotExistsException);
+            assertEquals("La ligne n°99 n'existe pas.", e.getMessage());
         }
 
         TaskRepository repoAfter = new TaskRepository(tempFile.getAbsolutePath());
@@ -121,7 +133,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testUpdateLine() throws IOException {
+    public void testUpdateLine() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
@@ -144,7 +156,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testInit() throws IOException {
+    public void testInit() throws Exception {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
@@ -161,7 +173,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testInitWithOverwrite() throws IOException {
+    public void testInitWithOverwrite() throws Exception {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
@@ -182,7 +194,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testSearchTask() throws IOException {
+    public void testSearchTask() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
@@ -200,7 +212,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testSearchTaskWithMaxCount() throws IOException {
+    public void testSearchTaskWithMaxCount() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 
@@ -218,10 +230,9 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testSearchTaskIgnoreAccents() throws IOException {
+    public void testSearchTaskIgnoreAccents() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
-
 
         TaskRepository repo = new TaskRepository(tempFile.getAbsolutePath());
         repo.init(true);
@@ -234,7 +245,7 @@ public class TaskRepositoryTest {
     }
 
     @Test()
-    public void testSearchTaskOnlyLowercaseLettersNumbers() throws IOException {
+    public void testSearchTaskOnlyLowercaseLettersNumbers() throws Exception {
         File tempFile = File.createTempFile("tasks", ".csv");
         tempFile.deleteOnExit();
 

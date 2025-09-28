@@ -1,6 +1,8 @@
-package task.cli.myllaume;
+package task.cli.myllaume.csv;
 
 import java.util.ArrayList;
+
+import task.cli.myllaume.utils.StringUtils;
 import java.io.*;
 
 public class TaskRepository {
@@ -22,7 +24,7 @@ public class TaskRepository {
         }
     }
 
-    private ArrayList<TaskCsv> read() {
+    private ArrayList<TaskCsv> read() throws Exception {
         ArrayList<TaskCsv> tasks = new ArrayList<>();
 
         errors.clear();
@@ -52,17 +54,16 @@ public class TaskRepository {
                 lineNumber++;
             }
         } catch (IOException e) {
-            errors.add(new CsvError(1, "Fichier introuvable."));
-            return tasks;
+            throw new FileNotExistsException(this.filePath);
         }
         return tasks;
     }
 
-    public ArrayList<TaskCsv> getTasks() {
+    public ArrayList<TaskCsv> getTasks() throws Exception {
         return this.read();
     }
 
-    public ArrayList<TaskCsv> searchTasks(String fulltext, int maxCount) {
+    public ArrayList<TaskCsv> searchTasks(String fulltext, int maxCount) throws Exception {
         ArrayList<TaskCsv> allTasks = this.read();
         ArrayList<TaskCsv> matchedTasks = new ArrayList<>();
 
@@ -92,7 +93,7 @@ public class TaskRepository {
         }
     }
 
-    public void removeLine(int lineNumber) throws IOException {
+    public void removeLine(int lineNumber) throws Exception {
         File inputFile = new File(this.filePath);
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
@@ -118,19 +119,19 @@ public class TaskRepository {
             }
 
             if (!found) {
-                throw new IOException("Line number " + lineNumber + " does not exist.");
+                throw new LineNotExistsException(lineNumber);
             }
         }
 
         if (!inputFile.delete()) {
-            throw new IOException("Could not delete original file");
+            throw new DeleteOriginalFileException(this.filePath);
         }
         if (!tempFile.renameTo(inputFile)) {
-            throw new IOException("Could not rename temp file");
+            throw new RenameTempFileException(tempFile.getAbsolutePath());
         }
     }
 
-    public void updateLine(int lineNumber, String description, boolean completed) throws IOException {
+    public void updateLine(int lineNumber, String description, boolean completed) throws Exception {
         File inputFile = new File(this.filePath);
         File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
 
@@ -153,10 +154,10 @@ public class TaskRepository {
         }
 
         if (!inputFile.delete()) {
-            throw new IOException("Could not delete original file");
+            throw new DeleteOriginalFileException(this.filePath);
         }
         if (!tempFile.renameTo(inputFile)) {
-            throw new IOException("Could not rename temp file");
+            throw new RenameTempFileException(tempFile.getAbsolutePath());
         }
     }
 

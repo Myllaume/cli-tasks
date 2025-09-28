@@ -1,4 +1,4 @@
-package task.cli.myllaume;
+package task.cli.myllaume.csv;
 
 public class TaskCsv {
     private final int id;

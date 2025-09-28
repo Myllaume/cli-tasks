@@ -1,6 +1,9 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.utils.StringUtils;
+
 import static org.junit.Assert.*;
 
 public class StringUtilsTest {

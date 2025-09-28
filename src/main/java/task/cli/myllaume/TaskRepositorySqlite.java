@@ -8,6 +8,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import task.cli.myllaume.csv.TaskCsv;
+import task.cli.myllaume.csv.TaskRepository;
+import task.cli.myllaume.utils.StringUtils;
+
 public class TaskRepositorySqlite {
     private final String url;
 

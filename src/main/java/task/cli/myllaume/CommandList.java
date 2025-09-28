@@ -35,15 +35,22 @@ public class CommandList implements Runnable {
             return;
         }
 
-        ArrayList<String> lines = new ArrayList<String>();
-        lines.add("Liste des tâches");
-        for (Task task : tasks) {
-            lines.add("- " + task.toString());
+        if (tasks.isEmpty()) {
+            System.out.println("Aucune tâche trouvée.");
+            return;
         }
 
-        for (String line : lines) {
-            System.out.println(line);
-        }
+        System.out.println("Liste des tâches");
+        
+        int maxIdWidth = tasks.stream()
+                .mapToInt(task -> String.valueOf(task.getId()).length())
+                .max()
+                .orElse(1);
+
+        tasks.forEach(task -> {
+            String idStr = String.format("%" + maxIdWidth + "d", task.getId());
+            System.out.println(idStr + ". " + task.toString());
+        });
     }
 
     private void count() {

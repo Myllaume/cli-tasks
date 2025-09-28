@@ -63,7 +63,7 @@ public class TaskTest {
     @Test
     public void testToStringNotCompleted() {
         Task task = new Task(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW);
-        assertEquals("[✗] Faire les courses", task.toString());
+        assertEquals("[ ] Faire les courses", task.toString());
     }
 
     @Test

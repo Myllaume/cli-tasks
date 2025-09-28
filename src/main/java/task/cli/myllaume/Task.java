@@ -56,7 +56,7 @@ public class Task {
 
     @Override
     public String toString() {
-        return "[" + (completed ? "✓" : "✗") + "] " + description;
+        return "[" + (completed ? "✓" : " ") + "] " + description;
     }
 
     public String toIdString() {

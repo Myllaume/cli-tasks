@@ -2,6 +2,7 @@ package task.cli.myllaume;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class Task {
     private final int id;
@@ -9,13 +10,16 @@ public class Task {
     private boolean completed;
     private String fulltext;
     private TaskPriority priority;
+    private ArrayList<Task> subTasks;
 
-    public Task(int id, String description, boolean completed, String fulltext, TaskPriority priority) {
+    public Task(int id, String description, boolean completed, String fulltext, TaskPriority priority,
+            ArrayList<Task> subTasks) {
         this.id = id;
         this.description = description;
         this.completed = completed;
         this.fulltext = fulltext;
         this.priority = priority;
+        this.subTasks = subTasks;
     }
 
     public int getId() {
@@ -31,11 +35,11 @@ public class Task {
     }
 
     public TaskPriority getPriority() {
-    return priority;
+        return priority;
     }
 
     public void setPriority(TaskPriority priority) {
-    this.priority = priority;
+        this.priority = priority;
     }
 
     public boolean getCompleted() {
@@ -52,6 +56,14 @@ public class Task {
 
     public void setFulltext(String fulltext) {
         this.fulltext = fulltext;
+    }
+
+    public ArrayList<Task> getSubTasks() {
+        return subTasks;
+    }
+
+    public void setSubTasks(ArrayList<Task> subTasks) {
+        this.subTasks = subTasks;
     }
 
     @Override
@@ -73,7 +85,7 @@ public class Task {
         boolean completed = sqlResult.getBoolean("completed");
         String fulltext = sqlResult.getString("fulltext");
         int priority = sqlResult.getInt("priority");
-        return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority));
+        return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority), null);
     }
 
 }

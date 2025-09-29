@@ -427,4 +427,40 @@ public class TaskRepositorySqliteTest {
         }
     }
 
+    @Test
+    public void testAddSubTask() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        Task parentTask = repo.createTask("Parent Task", false, TaskPriority.MEDIUM);
+        assertNotNull(parentTask);
+
+        Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
+        assertNotNull(subTask);
+        
+        Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId());
+        assertNotNull(taskFromDb);
+        assertEquals(1, taskFromDb.getSubTasks().size());
+        assertEquals(subTask.getId(), taskFromDb.getSubTasks().get(0).getId());
+    }
+
+    @Test
+    public void testFailAddSubTask() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        try {
+            repo.createSubTask(0, "Sub Task", false, TaskPriority.LOW);
+            fail("Should throw for unknown parent task");
+        } catch (UnknownTaskException e) {
+            assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
+        }
+    }
+
 }

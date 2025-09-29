@@ -37,7 +37,9 @@ public class TaskRepositorySqlite {
                                 name TEXT NOT NULL,
                                 completed BOOLEAN NOT NULL DEFAULT 0,
                                 fulltext TEXT NOT NULL,
-                                priority INTEGER NOT NULL DEFAULT 1
+                                priority INTEGER NOT NULL DEFAULT 1,
+                                parent_id INTEGER NULL,
+                                CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
                             )
                         """);
                 // Improve concurrency and planner accuracy for SQLite
@@ -68,7 +70,41 @@ public class TaskRepositorySqlite {
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     int id = rs.getInt(1);
-                    return new Task(id, name, completed, fulltext, priority);
+                    return new Task(id, name, completed, fulltext, priority, null);
+                } else {
+                    throw new SQLException("Impossible de récupérer l'ID généré.");
+                }
+            }
+        }
+    }
+
+    public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority) throws Exception {
+        if (name == null || name.trim().isEmpty()) {
+            throw new TaskNameCanNotEmptyException();
+        }
+
+        Task parentTask = getTask(parentId);
+        if (parentTask == null) {
+            throw new UnknownTaskException(parentId);
+        }
+
+        String sql = "INSERT INTO tasks (name, completed, fulltext, priority, parent_id) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            String fulltext = StringUtils.normalizeString(name);
+
+            pstmt.setString(1, name);
+            pstmt.setBoolean(2, completed);
+            pstmt.setString(3, fulltext);
+            pstmt.setInt(4, priority.getLevel());
+            pstmt.setInt(5, parentTask.getId());
+            pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    return new Task(id, name, completed, fulltext, priority, null);
                 } else {
                     throw new SQLException("Impossible de récupérer l'ID généré.");
                 }
@@ -81,7 +117,7 @@ public class TaskRepositorySqlite {
 
         Task task = getTask(id);
         if (task == null) {
-            throw new IllegalArgumentException("Aucune tâche trouvée avec l'ID: " + id);
+            throw new UnknownTaskException(id);
         }
 
         try (Connection conn = DriverManager.getConnection(url);
@@ -97,7 +133,7 @@ public class TaskRepositorySqlite {
     }
 
     public Task getTask(int id) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE id = ?";
+        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE id = ? AND parent_id IS NULL";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -130,8 +166,30 @@ public class TaskRepositorySqlite {
         }
     }
 
+    public Task getTaskWithSubTasks(int id) throws Exception {
+        Task parentTask = getTask(id);
+        if (parentTask == null) {
+            throw new UnknownTaskException(id);
+        }
+
+        String subTaskSql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE parent_id = ? ORDER BY name ASC";
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
+
+            subPstmt.setInt(1, id);
+            try (ResultSet rs = subPstmt.executeQuery()) {
+                ArrayList<Task> subTasks = new ArrayList<>();
+                while (rs.next()) {
+                    subTasks.add(Task.fromSqlResult(rs));
+                }
+                parentTask.setSubTasks(subTasks);
+                return parentTask;
+            }
+        }
+    }
+
     public Task getLastTask() throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks ORDER BY id DESC LIMIT 1";
+        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE parent_id IS NULL ORDER BY id DESC LIMIT 1";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -164,17 +222,17 @@ public class TaskRepositorySqlite {
     }
 
     public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
         return searchTasksProcess(keyword, limit, sql);
     }
 
     public ArrayList<Task> searchTasksTodo(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND completed = 0 ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND completed = 0 AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
         return searchTasksProcess(keyword, limit, sql);
     }
 
     public ArrayList<Task> searchTasksDone(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND completed = 1 ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND completed = 1 AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
         return searchTasksProcess(keyword, limit, sql);
     }
 
@@ -182,11 +240,11 @@ public class TaskRepositorySqlite {
         Task existingTask = getTask(id);
 
         if (existingTask == null) {
-            throw new IllegalArgumentException("Aucune tâche trouvée avec l'ID: " + id);
+            throw new UnknownTaskException(id);
         }
 
         if (name != null && name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Le nom de la tâche ne peut pas être vide.");
+            throw new TaskNameCanNotEmptyException();
         }
 
         String fulltext;
@@ -216,7 +274,7 @@ public class TaskRepositorySqlite {
             pstmt.setInt(5, id);
             pstmt.executeUpdate();
 
-            return new Task(id, name, completed, fulltext, priority);
+            return new Task(id, name, completed, fulltext, priority, null);
         }
     }
 

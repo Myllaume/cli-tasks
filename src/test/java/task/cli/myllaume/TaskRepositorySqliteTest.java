@@ -185,6 +185,7 @@ public class TaskRepositorySqliteTest {
         assertEquals(addedTask.getCompleted(), removedTask.getCompleted());
         assertEquals(addedTask.getFulltext(), removedTask.getFulltext());
         assertEquals(addedTask.getPriority(), removedTask.getPriority());
+        assertNull(repo.getTask(taskId));
     }
 
     @Test
@@ -440,7 +441,7 @@ public class TaskRepositorySqliteTest {
 
         Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
         assertNotNull(subTask);
-        
+
         Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId());
         assertNotNull(taskFromDb);
         assertEquals(1, taskFromDb.getSubTasks().size());
@@ -461,6 +462,27 @@ public class TaskRepositorySqliteTest {
         } catch (UnknownTaskException e) {
             assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
         }
+    }
+
+    @Test
+    public void testDeleteTaskDeleteSubTasks() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        Task parentTask = repo.createTask("Parent Task", false, TaskPriority.MEDIUM);
+        assertNotNull(parentTask);
+
+        Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
+        assertNotNull(subTask);
+
+        Task deletedTask = repo.removeTask(parentTask.getId());
+        assertNotNull(deletedTask);
+
+        Task subTaskFromDb = repo.getTask(subTask.getId());
+        assertNull(subTaskFromDb);
     }
 
 }

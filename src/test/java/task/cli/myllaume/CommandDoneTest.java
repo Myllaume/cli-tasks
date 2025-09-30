@@ -23,7 +23,7 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Test task", false, TaskPriority.LOW);
+        Task task = repo.createTask("Test task", false, TaskPriority.LOW, null);
 
         try {
             System.setErr(new PrintStream(err));
@@ -59,8 +59,8 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task firstTask = repo.createTask("First task", false, TaskPriority.LOW);
-        Task lastTask = repo.createTask("Last task", false, TaskPriority.HIGH);
+        Task firstTask = repo.createTask("First task", false, TaskPriority.LOW, null);
+        Task lastTask = repo.createTask("Last task", false, TaskPriority.HIGH, null);
         assertFalse(lastTask.getCompleted());
 
         try {
@@ -98,7 +98,7 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Completed task", true, TaskPriority.LOW);
+        Task task = repo.createTask("Completed task", true, TaskPriority.LOW, null);
 
         try {
             System.setErr(new PrintStream(err));

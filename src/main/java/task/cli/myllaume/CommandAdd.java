@@ -24,7 +24,7 @@ public class CommandAdd implements Runnable {
     @Override
     public void run() {
         try {
-            Task task = repo.createTask(description, completed, TaskPriority.fromLevel(priority));
+            Task task = repo.createTask(description, completed, TaskPriority.fromLevel(priority), null);
             System.out.println("La tâche '" + task.toIdString() + "' a été ajoutée.");
         } catch (Exception e) {
             System.out.println("La tâche n'a pas été ajoutée: " + e.getMessage());

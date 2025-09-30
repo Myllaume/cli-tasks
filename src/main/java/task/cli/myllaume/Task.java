@@ -2,6 +2,7 @@ package task.cli.myllaume;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 public class Task {
@@ -10,15 +11,19 @@ public class Task {
     private boolean completed;
     private String fulltext;
     private TaskPriority priority;
+    private Instant createdAt;
+    private Instant dueDate;
     private ArrayList<Task> subTasks;
 
     public Task(int id, String description, boolean completed, String fulltext, TaskPriority priority,
-            ArrayList<Task> subTasks) {
+            Instant createdAt, Instant dueDate, ArrayList<Task> subTasks) {
         this.id = id;
         this.description = description;
         this.completed = completed;
         this.fulltext = fulltext;
         this.priority = priority;
+        this.createdAt = createdAt;
+        this.dueDate = dueDate;
         this.subTasks = subTasks;
     }
 
@@ -66,6 +71,14 @@ public class Task {
         this.subTasks = subTasks;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getDueDate() {
+        return dueDate;
+    }
+
     @Override
     public String toString() {
         return "[" + (completed ? "✓" : " ") + "] " + description;
@@ -85,7 +98,9 @@ public class Task {
         boolean completed = sqlResult.getBoolean("completed");
         String fulltext = sqlResult.getString("fulltext");
         int priority = sqlResult.getInt("priority");
-        return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority), null);
+        Instant createdAt = Instant.ofEpochSecond(sqlResult.getLong("created_at"));
+        Instant dueDate = Instant.ofEpochSecond(sqlResult.getLong("due_at"));
+        return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority), createdAt, dueDate, null);
     }
 
 }

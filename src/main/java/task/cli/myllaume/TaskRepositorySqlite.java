@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import task.cli.myllaume.csv.TaskCsv;
@@ -31,6 +32,7 @@ public class TaskRepositorySqlite {
     public void init() throws Exception {
         try (Connection conn = DriverManager.getConnection(url)) {
             try (Statement stmt = conn.createStatement()) {
+                
                 stmt.execute("""
                             CREATE TABLE IF NOT EXISTS tasks (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +40,8 @@ public class TaskRepositorySqlite {
                                 completed BOOLEAN NOT NULL DEFAULT 0,
                                 fulltext TEXT NOT NULL,
                                 priority INTEGER NOT NULL DEFAULT 1,
+                                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                                due_at INTEGER NULL,
                                 parent_id INTEGER NULL,
                                 CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
                             )
@@ -50,12 +54,12 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public Task createTask(String name, boolean completed, TaskPriority priority) throws Exception {
+    public Task createTask(String name, boolean completed, TaskPriority priority, Instant dueDate) throws Exception {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Le nom de la tâche ne peut pas être vide.");
         }
 
-        String sql = "INSERT INTO tasks (name, completed, fulltext, priority) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO tasks (name, completed, fulltext, priority, due_at) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -65,12 +69,19 @@ public class TaskRepositorySqlite {
             pstmt.setBoolean(2, completed);
             pstmt.setString(3, fulltext);
             pstmt.setInt(4, priority.getLevel());
+            if (dueDate == null) {
+                pstmt.setNull(5, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setLong(5, dueDate.getEpochSecond());
+                
+            }
             pstmt.executeUpdate();
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     int id = rs.getInt(1);
-                    return new Task(id, name, completed, fulltext, priority, null);
+                    return getTask(id);
+                    // return new Task(id, name, completed, fulltext, priority, null);
                 } else {
                     throw new SQLException("Impossible de récupérer l'ID généré.");
                 }
@@ -104,7 +115,8 @@ public class TaskRepositorySqlite {
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     int id = rs.getInt(1);
-                    return new Task(id, name, completed, fulltext, priority, null);
+                    // return new Task(id, name, completed, fulltext, priority, null);
+                    return getTask(id);
                 } else {
                     throw new SQLException("Impossible de récupérer l'ID généré.");
                 }
@@ -133,7 +145,7 @@ public class TaskRepositorySqlite {
     }
 
     public Task getTask(int id) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE id = ? AND parent_id IS NULL";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -150,7 +162,7 @@ public class TaskRepositorySqlite {
     }
 
     public ArrayList<Task> getTasks(int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks ORDER BY name ASC LIMIT ?";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -172,7 +184,7 @@ public class TaskRepositorySqlite {
             throw new UnknownTaskException(id);
         }
 
-        String subTaskSql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE parent_id = ? ORDER BY name ASC";
+        String subTaskSql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE parent_id = ? ORDER BY name ASC";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
 
@@ -189,7 +201,7 @@ public class TaskRepositorySqlite {
     }
 
     public Task getLastTask() throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE parent_id IS NULL ORDER BY id DESC LIMIT 1";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE parent_id IS NULL ORDER BY id DESC LIMIT 1";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -222,17 +234,17 @@ public class TaskRepositorySqlite {
     }
 
     public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE fulltext LIKE ? AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
         return searchTasksProcess(keyword, limit, sql);
     }
 
     public ArrayList<Task> searchTasksTodo(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND completed = 0 AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE fulltext LIKE ? AND completed = 0 AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
         return searchTasksProcess(keyword, limit, sql);
     }
 
     public ArrayList<Task> searchTasksDone(String keyword, int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority FROM tasks WHERE fulltext LIKE ? AND completed = 1 AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE fulltext LIKE ? AND completed = 1 AND parent_id IS NULL ORDER BY name ASC LIMIT ?";
         return searchTasksProcess(keyword, limit, sql);
     }
 
@@ -274,7 +286,7 @@ public class TaskRepositorySqlite {
             pstmt.setInt(5, id);
             pstmt.executeUpdate();
 
-            return new Task(id, name, completed, fulltext, priority, null);
+            return new Task(id, name, completed, fulltext, priority, existingTask.getCreatedAt(), existingTask.getDueDate(), null);
         }
     }
 

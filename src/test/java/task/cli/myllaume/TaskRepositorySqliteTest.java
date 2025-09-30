@@ -433,11 +433,12 @@ public class TaskRepositorySqliteTest {
         assertNotNull(parentTask);
 
         Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
-        assertNotNull(subTask);
+        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
+        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
 
-        Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId());
+        Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId(), 2);
         assertNotNull(taskFromDb);
-        assertEquals(1, taskFromDb.getSubTasks().size());
+        assertEquals(2, taskFromDb.getSubTasks().size());
         assertEquals(subTask.getId(), taskFromDb.getSubTasks().get(0).getId());
     }
 

@@ -178,17 +178,18 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public Task getTaskWithSubTasks(int id) throws Exception {
+    public Task getTaskWithSubTasks(int id, int limit) throws Exception {
         Task parentTask = getTask(id);
         if (parentTask == null) {
             throw new UnknownTaskException(id);
         }
 
-        String subTaskSql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE parent_id = ? ORDER BY name ASC";
+        String subTaskSql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE parent_id = ? ORDER BY name ASC LIMIT ?";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
 
             subPstmt.setInt(1, id);
+            subPstmt.setInt(2, limit);
             try (ResultSet rs = subPstmt.executeQuery()) {
                 ArrayList<Task> subTasks = new ArrayList<>();
                 while (rs.next()) {

@@ -32,7 +32,7 @@ public class TaskRepositorySqlite {
     public void init() throws Exception {
         try (Connection conn = DriverManager.getConnection(url)) {
             try (Statement stmt = conn.createStatement()) {
-                
+
                 stmt.execute("""
                             CREATE TABLE IF NOT EXISTS tasks (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,7 +73,7 @@ public class TaskRepositorySqlite {
                 pstmt.setNull(5, java.sql.Types.INTEGER);
             } else {
                 pstmt.setLong(5, dueDate.getEpochSecond());
-                
+
             }
             pstmt.executeUpdate();
 
@@ -286,7 +286,9 @@ public class TaskRepositorySqlite {
             pstmt.setInt(5, id);
             pstmt.executeUpdate();
 
-            return new Task(id, name, completed, fulltext, priority, existingTask.getCreatedAt(), existingTask.getDueDate(), null);
+            return Task.of(id, name, completed, fulltext, priority, existingTask.getCreatedAt(),
+                    existingTask.getDueDate(), null);
+
         }
     }
 

@@ -15,7 +15,7 @@ public class Task {
     private Instant dueDate;
     private ArrayList<Task> subTasks;
 
-    public Task(int id, String description, boolean completed, String fulltext, TaskPriority priority,
+    private Task(int id, String description, boolean completed, String fulltext, TaskPriority priority,
             Instant createdAt, Instant dueDate, ArrayList<Task> subTasks) {
         this.id = id;
         this.description = description;
@@ -101,6 +101,31 @@ public class Task {
         Instant createdAt = Instant.ofEpochSecond(sqlResult.getLong("created_at"));
         Instant dueDate = Instant.ofEpochSecond(sqlResult.getLong("due_at"));
         return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority), createdAt, dueDate, null);
+    }
+
+    static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,
+            Instant createdAt, Instant dueDate, ArrayList<Task> subTasks) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("ID must be positive");
+        }
+        if (description == null || description.trim().isEmpty()) {
+            throw new IllegalArgumentException("Description cannot be null or empty");
+        }
+        if (fulltext == null || fulltext.trim().isEmpty()) {
+            throw new IllegalArgumentException("Fulltext cannot be null or empty");
+        }
+        if (priority == null) {
+            throw new IllegalArgumentException("Priority cannot be null");
+        }
+        if (createdAt == null) {
+            throw new IllegalArgumentException("CreatedAt cannot be null");
+        }
+        // DueDate can be null
+        if (subTasks == null) {
+            subTasks = new ArrayList<>();
+        }
+
+        return new Task(id, description, completed, fulltext, priority, createdAt, dueDate, subTasks);
     }
 
 }

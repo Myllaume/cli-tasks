@@ -334,7 +334,7 @@ public class TaskRepositorySqliteTest {
     }
 
     @Test
-    public void testUpdateTaskCompleted() throws Exception {
+    public void testUpdateTaskDone() throws Exception {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
@@ -342,10 +342,29 @@ public class TaskRepositorySqliteTest {
         repo.init();
 
         Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
+        assertNull(originalTask.getDoneAt());
 
         Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), true);
 
         assertEquals(true, updatedTask.getCompleted());
+        assertNotNull(updatedTask.getDoneAt());
+    }
+
+    @Test
+    public void testUpdateTaskTodo() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        Task originalTask = repo.createTask("Original Task", true, TaskPriority.LOW, null);
+        assertNotNull(originalTask.getDoneAt());
+
+        Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), false);
+
+        assertEquals(false, updatedTask.getCompleted());
+        assertNull(updatedTask.getDoneAt());
     }
 
     @Test

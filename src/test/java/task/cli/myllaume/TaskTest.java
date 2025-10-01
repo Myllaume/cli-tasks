@@ -18,14 +18,14 @@ public class TaskTest {
     @Test
     public void testGetDescription() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         assertEquals("Faire les courses", task.getDescription());
     }
 
     @Test
     public void testSetDescription() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         task.setDescription("Faire la vaisselle");
         assertEquals("Faire la vaisselle", task.getDescription());
     }
@@ -33,7 +33,7 @@ public class TaskTest {
     @Test
     public void testGetId() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         int expected = 1;
         assertEquals(expected, task.getId());
     }
@@ -41,7 +41,7 @@ public class TaskTest {
     @Test
     public void testGetCompleted() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         boolean expected = false;
         assertEquals(expected, task.getCompleted());
     }
@@ -49,7 +49,7 @@ public class TaskTest {
     @Test
     public void testSetCompleted() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         task.setCompleted(true);
         boolean expected = true;
         assertEquals(expected, task.getCompleted());
@@ -58,7 +58,7 @@ public class TaskTest {
     @Test
     public void testGetFulltext() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         String expected = "fairelescourses";
         assertEquals(expected, task.getFulltext());
     }
@@ -66,7 +66,7 @@ public class TaskTest {
     @Test
     public void testSetFulltext() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         task.setFulltext("nouveaufulltext");
         String expected = "nouveaufulltext";
         assertEquals(expected, task.getFulltext());
@@ -75,6 +75,7 @@ public class TaskTest {
     @Test
     public void testToStringNotCompleted() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
+                null,
                 null);
         assertEquals("[ ] Faire les courses", task.toString());
     }
@@ -82,6 +83,7 @@ public class TaskTest {
     @Test
     public void testToStringCompleted() {
         Task task = Task.of(1, "Faire les courses", true, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
+                null,
                 null);
         assertEquals("[✓] Faire les courses", task.toString());
     }
@@ -89,24 +91,34 @@ public class TaskTest {
     @Test
     public void testToCsvNotCompleted() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         assertEquals("Faire les courses,false", task.toCsv());
     }
 
     @Test
     public void testToCsvCompleted() {
         Task task = Task.of(1, "Faire les courses", true, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null);
+                null, null);
         assertEquals("Faire les courses,true", task.toCsv());
+    }
+
+    @Test
+    public void testGetDoneAt() {
+        Instant doneAt = Instant.now();
+
+        Task task = Task.of(1, "Faire les courses", true, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
+                doneAt, null);
+        assertEquals(doneAt, task.getDoneAt());
     }
 
     @Test
     public void testSubTask() {
         ArrayList<Task> subTask = new ArrayList<>();
-        subTask.add(Task.of(2, "Faire la vaisselle", false, "fairelavaiselle", TaskPriority.LOW, Instant.now(), null,
-                null));
+        subTask.add(
+                Task.of(2, "Faire la vaisselle", false, "fairelavaiselle", TaskPriority.LOW, Instant.now(), null, null,
+                        null));
         Task task = Task.of(1, "Faire les courses", true, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                subTask);
+                null, subTask);
         assertEquals(subTask, task.getSubTasks());
     }
 
@@ -125,7 +137,7 @@ public class TaskTest {
         Task originalTask = repo.createTask("Tâche de test SQL", true, TaskPriority.LOW, dueDate);
 
         String url = repo.getUrl();
-        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks WHERE id = ?";
+        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -144,6 +156,7 @@ public class TaskTest {
                 assertEquals(originalTask.getPriority(), taskFromSql.getPriority());
                 assertEquals(originalTask.getCreatedAt(), taskFromSql.getCreatedAt());
                 assertEquals(originalTask.getDueDate(), taskFromSql.getDueDate());
+                assertEquals(originalTask.getDoneAt(), taskFromSql.getDoneAt());
             }
         }
     }

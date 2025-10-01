@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class TaskRepositorySqliteTest {
+    private static final ZoneId timeZone = ZoneId.of("Europe/Paris");
 
     @Test
     public void testInitCreatesDatabaseFile() throws Exception {
@@ -112,7 +113,7 @@ public class TaskRepositorySqliteTest {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
-        Instant dueDate = localDateTime.atZone(ZoneId.of("Europe/Paris")).toInstant();
+        Instant dueDate = localDateTime.atZone(timeZone).toInstant();
 
         Task task = repo.createTask("Test Task", false, TaskPriority.LOW, dueDate);
 
@@ -456,6 +457,55 @@ public class TaskRepositorySqliteTest {
         } catch (UnknownTaskException e) {
             assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
         }
+    }
+
+    @Test
+    public void testGetTasksOrderByPriority() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        Task highTask = repo.createTask("High Priority Task", false, TaskPriority.HIGH, null);
+        Task lowTask = repo.createTask("Low Priority Task", false, TaskPriority.LOW, null);
+        Task mediumTask = repo.createTask("Medium Priority Task", false, TaskPriority.MEDIUM, null);
+
+        Instant tomorrow = LocalDateTime.now().plusDays(1)
+                .atZone(timeZone)
+                .toInstant();
+        Instant nextDay = LocalDateTime.now().plusDays(2)
+                .atZone(timeZone)
+                .toInstant();
+        Instant nextWeek = LocalDateTime.now().plusDays(7)
+                .atZone(timeZone)
+                .toInstant();
+
+        Task tomorrowTask = repo.createTask("Tomorrow Task", false, TaskPriority.MEDIUM, tomorrow);
+        Task tomorrowTaskNewer = repo.createTask("Tomorrow Task", false, TaskPriority.MEDIUM, tomorrow);
+        Task nextDayTask = repo.createTask("Next Day Task", false, TaskPriority.MEDIUM, nextDay);
+        Task nextWeekTask = repo.createTask("Next week Task", false, TaskPriority.MEDIUM, nextWeek);
+        // Not in result because is done
+        repo.createTask("Done Task", true, TaskPriority.MEDIUM, null);
+        // Not in result because is subtask
+        repo.createSubTask(tomorrowTask.getId(), "Sub Task", false, TaskPriority.MEDIUM);
+        // Not in result because of the limit
+        repo.createTask("Next week Task", false, TaskPriority.LOW, null);
+
+        ArrayList<Task> tasks = repo.getTasksOrderByPriority(3, 7);
+
+        assertEquals(7, tasks.size());
+        // first because due date is the soonest
+        assertEquals(tomorrowTask.getId(), tasks.get(0).getId());
+        // second because due date is the same as first, but was added after
+        assertEquals(tomorrowTaskNewer.getId(), tasks.get(1).getId());
+        // third because due date is the next soonest
+        assertEquals(nextDayTask.getId(), tasks.get(2).getId());
+        // then the high priority task without due date or +3 days due date
+        assertEquals(highTask.getId(), tasks.get(3).getId());
+        assertEquals(mediumTask.getId(), tasks.get(4).getId());
+        assertEquals(nextWeekTask.getId(), tasks.get(5).getId());
+        assertEquals(lowTask.getId(), tasks.get(6).getId());
     }
 
     /**

@@ -178,6 +178,33 @@ public class TaskRepositorySqlite {
         }
     }
 
+    public ArrayList<Task> getTasksOrderByPriority(int dueInDays, int limit) throws Exception {
+        String sql = String.format("""
+                SELECT id, name, completed, fulltext, priority, created_at, due_at FROM tasks
+                WHERE
+                    parent_id IS NULL AND
+                    completed = 0
+                ORDER BY
+                    (due_at IS NOT NULL AND due_at <= strftime('%%s','now','+%d days')) DESC,
+                    priority DESC,
+                    id ASC
+                LIMIT ?
+                """, dueInDays);
+
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                ArrayList<Task> tasks = new ArrayList<>();
+                while (rs.next()) {
+                    tasks.add(Task.fromSqlResult(rs));
+                }
+                return tasks;
+            }
+        }
+    }
+
     public Task getTaskWithSubTasks(int id, int limit) throws Exception {
         Task parentTask = getTask(id);
         if (parentTask == null) {

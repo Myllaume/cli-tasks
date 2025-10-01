@@ -89,7 +89,8 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority, Instant dueDate) throws Exception {
+    public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority, Instant dueDate)
+            throws Exception {
         if (name == null || name.trim().isEmpty()) {
             throw new TaskNameCanNotEmptyException();
         }
@@ -281,47 +282,86 @@ public class TaskRepositorySqlite {
         return searchTasksProcess(keyword, limit, sql);
     }
 
-    public Task updateTask(int id, String name, Boolean completed, TaskPriority priority) throws Exception {
+    public Task updateTaskName(int id, String name) throws Exception {
         Task existingTask = getTask(id);
 
         if (existingTask == null) {
             throw new UnknownTaskException(id);
         }
 
-        if (name != null && name.trim().isEmpty()) {
-            throw new TaskNameCanNotEmptyException();
-        }
+        String fulltext = StringUtils.normalizeString(name);
 
-        String fulltext;
-
-        if (name == null) {
-            name = existingTask.getDescription();
-            fulltext = existingTask.getFulltext();
-        } else {
-            fulltext = StringUtils.normalizeString(name);
-        }
-
-        if (completed == null) {
-            completed = existingTask.getCompleted();
-        }
-        if (priority == null) {
-            priority = existingTask.getPriority();
-        }
-
-        String sql = "UPDATE tasks SET name = ?, completed = ?, fulltext = ?, priority = ? WHERE id = ?";
+        String sql = "UPDATE tasks SET name = ?, fulltext = ? WHERE id = ?";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, name);
-            pstmt.setBoolean(2, completed);
-            pstmt.setString(3, fulltext);
-            pstmt.setInt(4, priority.getLevel());
-            pstmt.setInt(5, id);
+            pstmt.setString(2, fulltext);
+            pstmt.setInt(3, id);
             pstmt.executeUpdate();
 
-            return Task.of(id, name, completed, fulltext, priority, existingTask.getCreatedAt(),
-                    existingTask.getDueDate(), null);
+            return getTask(id);
+        }
+    }
 
+    public Task updateTaskCompleted(int id, boolean completed) throws Exception {
+        Task existingTask = getTask(id);
+
+        if (existingTask == null) {
+            throw new UnknownTaskException(id);
+        }
+
+        String sql = "UPDATE tasks SET completed = ? WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setBoolean(1, completed);
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+
+            return getTask(id);
+        }
+    }
+
+    public Task updateTaskPriority(int id, TaskPriority priority) throws Exception {
+        Task existingTask = getTask(id);
+
+        if (existingTask == null) {
+            throw new UnknownTaskException(id);
+        }
+
+        String sql = "UPDATE tasks SET priority = ? WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, priority.getLevel());
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+
+            return getTask(id);
+        }
+    }
+
+    public Task updateTaskDueDate(int id, Instant dueDate) throws Exception {
+        Task existingTask = getTask(id);
+
+        if (existingTask == null) {
+            throw new UnknownTaskException(id);
+        }
+
+        String sql = "UPDATE tasks SET due_at = ? WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            if (dueDate == null) {
+                pstmt.setNull(1, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setLong(1, dueDate.getEpochSecond());
+            }
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+
+            return getTask(id);
         }
     }
 

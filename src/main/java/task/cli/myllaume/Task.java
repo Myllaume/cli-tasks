@@ -100,7 +100,9 @@ public class Task {
         int priority = sqlResult.getInt("priority");
         Instant createdAt = Instant.ofEpochSecond(sqlResult.getLong("created_at"));
         Instant dueDate = Instant.ofEpochSecond(sqlResult.getLong("due_at"));
-        return new Task(id, description, completed, fulltext, TaskPriority.fromLevel(priority), createdAt, dueDate, null);
+
+        return Task.of(id, description, completed, fulltext, TaskPriority.fromLevel(priority), createdAt, dueDate,
+                null);
     }
 
     static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,

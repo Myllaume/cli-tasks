@@ -89,7 +89,7 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority) throws Exception {
+    public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority, Instant dueDate) throws Exception {
         if (name == null || name.trim().isEmpty()) {
             throw new TaskNameCanNotEmptyException();
         }
@@ -99,7 +99,7 @@ public class TaskRepositorySqlite {
             throw new UnknownTaskException(parentId);
         }
 
-        String sql = "INSERT INTO tasks (name, completed, fulltext, priority, parent_id) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tasks (name, completed, fulltext, priority, due_at, parent_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -109,7 +109,12 @@ public class TaskRepositorySqlite {
             pstmt.setBoolean(2, completed);
             pstmt.setString(3, fulltext);
             pstmt.setInt(4, priority.getLevel());
-            pstmt.setInt(5, parentTask.getId());
+            if (dueDate == null) {
+                pstmt.setNull(5, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setLong(5, dueDate.getEpochSecond());
+            }
+            pstmt.setInt(6, parentTask.getId());
             pstmt.executeUpdate();
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {

@@ -433,14 +433,27 @@ public class TaskRepositorySqliteTest {
         Task parentTask = repo.createTask("Parent Task", false, TaskPriority.MEDIUM, null);
         assertNotNull(parentTask);
 
-        Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
-        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
-        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW);
+        Instant tomorrow = LocalDateTime.now().plusDays(1)
+                .atZone(timeZone)
+                .toInstant();
+
+        Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW, tomorrow);
+        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW, null);
+        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW, null);
 
         Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId(), 2);
         assertNotNull(taskFromDb);
         assertEquals(2, taskFromDb.getSubTasks().size());
-        assertEquals(subTask.getId(), taskFromDb.getSubTasks().get(0).getId());
+
+        Task subTaskFromDb = taskFromDb.getSubTasks().get(0);
+
+        assertEquals(subTask.getId(), subTaskFromDb.getId());
+        assertEquals(subTask.getDescription(), subTaskFromDb.getDescription());
+        assertEquals(subTask.getCompleted(), subTaskFromDb.getCompleted());
+        assertEquals(subTask.getFulltext(), subTaskFromDb.getFulltext());
+        assertEquals(subTask.getPriority(), subTaskFromDb.getPriority());
+        assertEquals(subTask.getCreatedAt(), subTaskFromDb.getCreatedAt());
+        assertEquals(subTask.getDueDate(), subTaskFromDb.getDueDate());
     }
 
     @Test
@@ -452,7 +465,7 @@ public class TaskRepositorySqliteTest {
         repo.init();
 
         try {
-            repo.createSubTask(0, "Sub Task", false, TaskPriority.LOW);
+            repo.createSubTask(0, "Sub Task", false, TaskPriority.LOW, null);
             fail("Should throw for unknown parent task");
         } catch (UnknownTaskException e) {
             assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
@@ -488,7 +501,7 @@ public class TaskRepositorySqliteTest {
         // Not in result because is done
         repo.createTask("Done Task", true, TaskPriority.MEDIUM, null);
         // Not in result because is subtask
-        repo.createSubTask(tomorrowTask.getId(), "Sub Task", false, TaskPriority.MEDIUM);
+        repo.createSubTask(tomorrowTask.getId(), "Sub Task", false, TaskPriority.MEDIUM, null);
         // Not in result because of the limit
         repo.createTask("Next week Task", false, TaskPriority.LOW, null);
 

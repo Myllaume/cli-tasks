@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 
 import task.cli.myllaume.csv.TaskCsv;
-import task.cli.myllaume.csv.TaskRepository;
+import task.cli.myllaume.csv.TaskRepositoryCsv;
 import task.cli.myllaume.utils.StringUtils;
 
 public class TaskRepositorySqlite {
@@ -412,7 +412,7 @@ public class TaskRepositorySqlite {
     }
 
     public void importFromCsv(String csvPath) throws Exception {
-        TaskRepository repo = new TaskRepository(csvPath);
+        TaskRepositoryCsv repo = new TaskRepositoryCsv(csvPath);
         ArrayList<TaskCsv> tasks = repo.getTasks();
 
         if (repo.getErrors().size() > 0) {

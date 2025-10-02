@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import task.cli.myllaume.utils.StringUtils;
 import java.io.*;
 
-public class TaskRepository {
+public class TaskRepositoryCsv {
     private final String filePath;
     private final String header = "description,completed";
     private ArrayList<CsvError> errors = new ArrayList<>();
 
-    public TaskRepository(String filePath) {
+    public TaskRepositoryCsv(String filePath) {
         this.filePath = filePath;
     }
 
@@ -44,7 +44,7 @@ public class TaskRepository {
             lineNumber++;
 
             while ((line = reader.readLine()) != null) {
-                TaskCsv task = TaskRepository.parseCsvLine(line, lineNumber);
+                TaskCsv task = TaskRepositoryCsv.parseCsvLine(line, lineNumber);
                 if (task != null) {
                     tasks.add(task);
                 } else {

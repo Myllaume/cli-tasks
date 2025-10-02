@@ -241,6 +241,28 @@ public class TaskRepositorySqliteTest {
     }
 
     @Test
+    public void testCsvImportExport() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+        File importedFile = new File("src/test/resources/many.csv");
+        File exportedFile = new File(tempDir.toString() + "/many_exported.csv");
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.init();
+
+        repo.importFromCsv(importedFile.getAbsolutePath());
+        repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
+
+        assertTrue("Exported file should exist", exportedFile.exists());
+
+        // Read and compare the files
+        String originalContent = Files.readString(Path.of("src/test/resources/many.csv"));
+        String exportedContent = Files.readString(exportedFile.toPath());
+
+        assertEquals("Exported CSV should match original CSV", originalContent.length(), exportedContent.length());
+    }
+
+    @Test
     public void testSearchTasks() throws Exception {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();

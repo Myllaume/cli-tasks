@@ -2,41 +2,55 @@ package task.cli.myllaume.csv;
 
 import java.util.ArrayList;
 
-import task.cli.myllaume.utils.StringUtils;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class TaskRepositoryCsv {
     private final String filePath;
-    private final String header = "description,completed";
-    private ArrayList<CsvError> errors = new ArrayList<>();
+    static private final String header = "description,completed";
 
-    public TaskRepositoryCsv(String filePath) {
+    private TaskRepositoryCsv(String filePath) {
         this.filePath = filePath;
+    }
+
+    public static TaskRepositoryCsv of(String filePath) {
+        File file = new File(filePath);
+        if (!file.getName().endsWith(".csv")) {
+            throw new IllegalArgumentException("Le fichier doit avoir l'extension .csv");
+        }
+
+        return new TaskRepositoryCsv(file.getAbsolutePath());
     }
 
     public void init(boolean overwrite) throws IOException {
         File file = new File(this.filePath);
         if (!file.exists() || overwrite) {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                writer.write(this.header);
+            try (BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+                writer.write(TaskRepositoryCsv.header);
                 writer.newLine();
             }
         }
     }
 
     private ArrayList<TaskCsv> read() throws Exception {
+        File file = new File(this.filePath);
+        if (!file.exists()) {
+            throw new FileNotExistsException(this.filePath);
+        }
+
         ArrayList<TaskCsv> tasks = new ArrayList<>();
+        ArrayList<CsvError> errors = new ArrayList<>();
 
-        errors.clear();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(this.filePath))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(this.filePath), StandardCharsets.UTF_8))) {
 
             int lineNumber = 1;
 
             String header = reader.readLine();
-            if (!header.equals(this.header)) {
+            if (!header.equals(TaskRepositoryCsv.header)) {
                 errors.add(new CsvError(1, "Format d'en-tête incorrect."));
-                return tasks;
+                throw new CsvParsingException(errors);
             }
 
             String line;
@@ -44,18 +58,21 @@ public class TaskRepositoryCsv {
             lineNumber++;
 
             while ((line = reader.readLine()) != null) {
-                TaskCsv task = TaskRepositoryCsv.parseCsvLine(line, lineNumber);
-                if (task != null) {
+                try {
+                    TaskCsv task = TaskRepositoryCsv.parseCsvLine(line, lineNumber);
                     tasks.add(task);
-                } else {
-                    errors.add(new CsvError(lineNumber, "Ligne mal formée ou erreur de conversion"));
+                } catch (Exception e) {
+                    errors.add(new CsvError(lineNumber, e.getMessage()));
                 }
 
                 lineNumber++;
             }
-        } catch (IOException e) {
-            throw new FileNotExistsException(this.filePath);
         }
+
+        if (!errors.isEmpty()) {
+            throw new CsvParsingException(errors);
+        }
+
         return tasks;
     }
 
@@ -63,118 +80,31 @@ public class TaskRepositoryCsv {
         return this.read();
     }
 
-    public ArrayList<TaskCsv> searchTasks(String fulltext, int maxCount) throws Exception {
-        ArrayList<TaskCsv> allTasks = this.read();
-        ArrayList<TaskCsv> matchedTasks = new ArrayList<>();
-
-        String normalizedFulltext = StringUtils.normalizeString(fulltext);
-
-        int analysedCount = 0;
-
-        for (TaskCsv task : allTasks) {
-            String normalizedDescription = StringUtils.normalizeString(task.getDescription());
-
-            if (normalizedDescription.contains(normalizedFulltext)) {
-                matchedTasks.add(task);
-                analysedCount++;
-            }
-            if (analysedCount >= maxCount) {
-                break;
-            }
-        }
-        return matchedTasks;
-
-    }
-
     public void addLineAtEnd(TaskCsv task) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(this.filePath, true))) {
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(this.filePath, true), StandardCharsets.UTF_8))) {
             writer.write(task.toCsv());
             writer.newLine();
         }
     }
 
-    public void removeLine(int lineNumber) throws Exception {
-        File inputFile = new File(this.filePath);
-        File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-                BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-
-            String currentLine = reader.readLine();
-            writer.write(currentLine);
-            writer.newLine();
-
-            boolean found = false;
-
-            int currentLineNumber = 1;
-            while ((currentLine = reader.readLine()) != null) {
-                if (currentLineNumber != lineNumber) {
-                    writer.write(currentLine);
-                    writer.newLine();
-                } else {
-                    found = true;
-                }
-
-                currentLineNumber++;
-            }
-
-            if (!found) {
-                throw new LineNotExistsException(lineNumber);
-            }
-        }
-
-        if (!inputFile.delete()) {
-            throw new DeleteOriginalFileException(this.filePath);
-        }
-        if (!tempFile.renameTo(inputFile)) {
-            throw new RenameTempFileException(tempFile.getAbsolutePath());
-        }
-    }
-
-    public void updateLine(int lineNumber, String description, boolean completed) throws Exception {
-        File inputFile = new File(this.filePath);
-        File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-                BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-
-            String currentLine;
-            int currentLineNumber = 0;
-
-            while ((currentLine = reader.readLine()) != null) {
-                if (currentLineNumber == lineNumber) {
-                    TaskCsv newTask = new TaskCsv(lineNumber, description, completed);
-                    writer.write(newTask.toCsv());
-                } else {
-                    writer.write(currentLine);
-                }
-                writer.newLine();
-                currentLineNumber++;
-            }
-        }
-
-        if (!inputFile.delete()) {
-            throw new DeleteOriginalFileException(this.filePath);
-        }
-        if (!tempFile.renameTo(inputFile)) {
-            throw new RenameTempFileException(tempFile.getAbsolutePath());
-        }
-    }
-
-    public ArrayList<CsvError> getErrors() {
-        return errors;
-    }
-
-    private static TaskCsv parseCsvLine(String line, int lineNumber) {
+    private static TaskCsv parseCsvLine(String line, int lineNumber) throws Exception {
         String[] parts = line.split(",");
-        if (parts.length != 2) {
-            return null;
+        if (parts.length != header.split(",").length) {
+            throw new Exception("Ligne mal formée ou erreur de conversion.");
+        }
+
+        if (parts[0].trim().isEmpty()) {
+            throw new Exception("Le format du champ 'description' est incorrect.");
+        }
+
+        if (!parts[1].equals("true") && !parts[1].equals("false")) {
+            throw new Exception("Le format du champ 'completed' est incorrect.");
         }
 
         String description = parts[0];
         boolean completed = Boolean.parseBoolean(parts[1]);
         return new TaskCsv(lineNumber, description, completed);
-
     }
 
 }

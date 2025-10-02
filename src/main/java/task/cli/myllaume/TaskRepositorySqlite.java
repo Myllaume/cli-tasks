@@ -1,5 +1,6 @@
 package task.cli.myllaume;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -412,15 +413,18 @@ public class TaskRepositorySqlite {
     }
 
     public void importFromCsv(String csvPath) throws Exception {
-        TaskRepositoryCsv repo = new TaskRepositoryCsv(csvPath);
-        ArrayList<TaskCsv> tasks = repo.getTasks();
+        ArrayList<TaskCsv> tasks;
 
-        if (repo.getErrors().size() > 0) {
+        try {
+            TaskRepositoryCsv repo = TaskRepositoryCsv.of(csvPath);
+            tasks = repo.getTasks();
+        } catch (Exception e) {
             throw new Exception("Le fichier CSV contient des erreurs, l'import est annulé.");
         }
 
-        // Batch insert inside a single transaction to improve performance
-        String sql = "INSERT INTO tasks (name, completed, fulltext) VALUES (?, ?, ?)";
+        Instant now = Instant.now();
+
+        String sql = "INSERT INTO tasks (name, completed, fulltext, created_at, due_at) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             conn.setAutoCommit(false);
@@ -428,10 +432,30 @@ public class TaskRepositorySqlite {
                 pstmt.setString(1, task.getDescription());
                 pstmt.setBoolean(2, task.getCompleted());
                 pstmt.setString(3, StringUtils.normalizeString(task.getDescription()));
+                pstmt.setLong(4, now.getEpochSecond());
+                if (task.getCompleted()) {
+                    pstmt.setLong(5, now.getEpochSecond());
+                } else {
+                    pstmt.setNull(5, java.sql.Types.INTEGER);
+                }
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
             conn.commit();
+        }
+    }
+
+    public void exportToCsv(String csvPath, int limit, boolean overwrite) throws Exception {
+        ArrayList<Task> tasks = getTasks(limit);
+
+        File csvFile = new File(csvPath);
+
+        TaskRepositoryCsv repo = TaskRepositoryCsv.of(csvFile.getAbsolutePath());
+        repo.init(overwrite);
+
+        for (Task task : tasks) {
+            TaskCsv taskCsv = new TaskCsv(task.getId(), task.getDescription(), task.getCompleted());
+            repo.addLineAtEnd(taskCsv);
         }
     }
 }

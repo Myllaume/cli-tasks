@@ -1,6 +1,9 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.db.TaskRepository;
+
 import static org.junit.Assert.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -127,8 +130,8 @@ public class TaskTest {
         Path tempDir = Files.createTempDirectory("test_fromSqlResult");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);

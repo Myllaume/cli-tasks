@@ -2,6 +2,7 @@ package task.cli.myllaume;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import task.cli.myllaume.db.TaskRepository;
 
 @Command(name = "tasks", mixinStandardHelpOptions = true, description = "Gestion des tâches en CLI")
 public class App implements Runnable {
@@ -20,12 +21,12 @@ public class App implements Runnable {
         }
 
         String dataDir = new AppDirs().getDataDir();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dataDir);
+        TaskRepository repo = new TaskRepository(dataDir);
 
         CommandLine cmd = new CommandLine(new App());
 
         try {
-            repo.init();
+            repo.initTables();
         } catch (Exception e) {
             System.out.println("Erreur lors de l'initialisation de la base de données : " + e.getMessage());
         }

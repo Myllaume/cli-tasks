@@ -4,12 +4,13 @@ import java.util.ArrayList;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import task.cli.myllaume.db.TaskRepository;
 
 @Command(name = "list", description = "Lister les tâches")
 public class CommandList implements Runnable {
-    private final TaskRepositorySqlite repo;
+    private final TaskRepository repo;
 
-    public CommandList(TaskRepositorySqlite repo) {
+    public CommandList(TaskRepository repo) {
         this.repo = repo;
     }
 

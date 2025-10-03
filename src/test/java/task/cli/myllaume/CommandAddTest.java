@@ -3,6 +3,7 @@ package task.cli.myllaume;
 import org.junit.Test;
 
 import picocli.CommandLine;
+import task.cli.myllaume.db.TaskRepository;
 
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
@@ -24,8 +25,8 @@ public class CommandAddTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));
@@ -61,8 +62,8 @@ public class CommandAddTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));

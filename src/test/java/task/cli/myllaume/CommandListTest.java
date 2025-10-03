@@ -1,6 +1,9 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.db.TaskRepository;
+
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -20,8 +23,8 @@ public class CommandListTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
         repo.createTask("One", false, TaskPriority.LOW, null);
         repo.createTask("Two", true, TaskPriority.LOW, null);
 
@@ -52,8 +55,8 @@ public class CommandListTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
         repo.createTask("Test", false, TaskPriority.LOW, null);
 
         try {

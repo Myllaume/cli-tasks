@@ -2,12 +2,13 @@ package task.cli.myllaume;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
+import task.cli.myllaume.db.TaskRepository;
 
 @Command(name = "remove", description = "Retirer une tâche")
 public class CommandRemove implements Runnable {
-    private final TaskRepositorySqlite repo;
+    private final TaskRepository repo;
 
-    public CommandRemove(TaskRepositorySqlite repo) {
+    public CommandRemove(TaskRepository repo) {
         this.repo = repo;
     }
 

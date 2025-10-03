@@ -1,6 +1,10 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.db.TaskRepository;
+import task.cli.myllaume.db.UnknownTaskException;
+
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -25,9 +29,9 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        TaskRepository repo = new TaskRepository(dbPath);
 
-        repo.init();
+        repo.initTables();
 
         File dbFile = new File(dbPath + System.getProperty("file.separator") + "tasks.db");
         assertTrue(dbFile.exists());
@@ -40,9 +44,9 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        TaskRepository repo = new TaskRepository(dbPath);
 
-        repo.init();
+        repo.initTables();
         String url = repo.getUrl();
 
         try (Connection conn = DriverManager.getConnection(url)) {
@@ -57,10 +61,10 @@ public class TaskRepositorySqliteTest {
     @Test
     public void testInitWithNonExistentDirectory() throws Exception {
         String dbPath = "/tmp/nonexistent/path/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+        TaskRepository repo = new TaskRepository(dbPath);
 
         try {
-            repo.init();
+            repo.initTables();
             fail("Should have thrown an exception for non-existent directory");
         } catch (Exception e) {
             assertNotNull(e);
@@ -70,7 +74,7 @@ public class TaskRepositorySqliteTest {
     @Test
     public void testConstructorWithNullPath() {
         try {
-            new TaskRepositorySqlite(null);
+            new TaskRepository(null);
             fail("Should have thrown IllegalArgumentException for null path");
         } catch (IllegalArgumentException e) {
             assertEquals("Le chemin de la base de données ne peut pas être nul ou vide.", e.getMessage());
@@ -80,7 +84,7 @@ public class TaskRepositorySqliteTest {
     @Test
     public void testConstructorWithEmptyPath() {
         try {
-            new TaskRepositorySqlite("   ");
+            new TaskRepository("   ");
             fail("Should have thrown IllegalArgumentException for empty path");
         } catch (IllegalArgumentException e) {
             assertEquals("Le chemin de la base de données ne peut pas être nul ou vide.", e.getMessage());
@@ -95,8 +99,8 @@ public class TaskRepositorySqliteTest {
         String dbPathWithoutSlash = tempDir.toString();
         String dbPathWithSlash = tempDir.toString() + "/";
 
-        TaskRepositorySqlite repo1 = new TaskRepositorySqlite(dbPathWithoutSlash);
-        TaskRepositorySqlite repo2 = new TaskRepositorySqlite(dbPathWithSlash);
+        TaskRepository repo1 = new TaskRepository(dbPathWithoutSlash);
+        TaskRepository repo2 = new TaskRepository(dbPathWithSlash);
 
         assertEquals(repo1.getUrl(), repo2.getUrl());
         assertTrue(repo1.getUrl().endsWith("tasks.db"));
@@ -108,8 +112,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
@@ -131,8 +135,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             repo.createTask(null, false, TaskPriority.LOW, null);
@@ -148,8 +152,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             repo.createTask("   ", false, TaskPriority.LOW, null);
@@ -165,8 +169,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         Task addedTask = repo.createTask("Task to Remove", false, TaskPriority.LOW, null);
         assertNotNull(addedTask);
@@ -188,8 +192,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             repo.removeTask(999); // ID qui n'existe pas
@@ -205,8 +209,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         Task task = repo.createTask("Task1", false, TaskPriority.LOW, null);
         repo.createTask("Task2", false, TaskPriority.MEDIUM, null);
@@ -232,8 +236,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
         int count = repo.countTasks();
@@ -247,8 +251,8 @@ public class TaskRepositorySqliteTest {
         File importedFile = new File("src/test/resources/many.csv");
         File exportedFile = new File(tempDir.toString() + "/many_exported.csv");
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         repo.importFromCsv(importedFile.getAbsolutePath());
         repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
@@ -268,8 +272,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
         ArrayList<Task> tasks = repo.searchTasks("test", 5);
@@ -283,8 +287,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
         ArrayList<Task> tasks = repo.searchTasksDone("test", 100);
@@ -298,8 +302,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
         ArrayList<Task> tasks = repo.searchTasksTodo("test", 100);
@@ -313,8 +317,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         Task addedTask = repo.createTask("Test Task", false, TaskPriority.LOW, null);
         assertNotNull(addedTask);
@@ -333,8 +337,8 @@ public class TaskRepositorySqliteTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         assertNull(repo.getTask(999));
     }
@@ -344,8 +348,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
 
@@ -360,8 +364,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
         assertNull(originalTask.getDoneAt());
@@ -377,8 +381,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task originalTask = repo.createTask("Original Task", true, TaskPriority.LOW, null);
         assertNotNull(originalTask.getDoneAt());
@@ -394,8 +398,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
 
@@ -409,8 +413,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
 
@@ -429,8 +433,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task parentTask = repo.createTask("Parent Task", false, TaskPriority.MEDIUM, null);
         assertNotNull(parentTask);
@@ -463,8 +467,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         try {
             repo.createSubTask(0, "Sub Task", false, TaskPriority.LOW, null);
@@ -479,8 +483,8 @@ public class TaskRepositorySqliteTest {
         Path tempDir = Files.createTempDirectory("tests");
         tempDir.toFile().deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.toString());
+        repo.initTables();
 
         Task highTask = repo.createTask("High Priority Task", false, TaskPriority.HIGH, null);
         Task lowTask = repo.createTask("Low Priority Task", false, TaskPriority.LOW, null);

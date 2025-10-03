@@ -3,12 +3,13 @@ package task.cli.myllaume;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import task.cli.myllaume.db.TaskRepository;
 
 @Command(name = "add", description = "Ajouter une tâche")
 public class CommandAdd implements Runnable {
-    private final TaskRepositorySqlite repo;
+    private final TaskRepository repo;
 
-    public CommandAdd(TaskRepositorySqlite repo) {
+    public CommandAdd(TaskRepository repo) {
         this.repo = repo;
     }
 

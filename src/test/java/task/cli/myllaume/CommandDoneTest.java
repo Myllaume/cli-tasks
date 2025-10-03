@@ -1,6 +1,9 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.db.TaskRepository;
+
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -20,8 +23,8 @@ public class CommandDoneTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         Task task = repo.createTask("Test task", false, TaskPriority.LOW, null);
 
@@ -56,8 +59,8 @@ public class CommandDoneTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         Task firstTask = repo.createTask("First task", false, TaskPriority.LOW, null);
         Task lastTask = repo.createTask("Last task", false, TaskPriority.HIGH, null);
@@ -95,8 +98,8 @@ public class CommandDoneTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         Task task = repo.createTask("Completed task", true, TaskPriority.LOW, null);
 
@@ -131,8 +134,8 @@ public class CommandDoneTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));
@@ -162,8 +165,8 @@ public class CommandDoneTest {
         tempDir.toFile().deleteOnExit();
 
         String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        TaskRepository repo = new TaskRepository(dbPath);
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));

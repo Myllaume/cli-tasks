@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import task.cli.myllaume.db.TaskRepository;
 
 @Command(name = "search", description = "Rechercher une tâche")
 public class CommandSearch implements Runnable {
-    private final TaskRepositorySqlite repo;
+    private final TaskRepository repo;
 
-    public CommandSearch(TaskRepositorySqlite repo) {
+    public CommandSearch(TaskRepository repo) {
         this.repo = repo;
     }
 

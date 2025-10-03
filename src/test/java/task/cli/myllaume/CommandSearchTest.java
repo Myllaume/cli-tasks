@@ -3,6 +3,7 @@ package task.cli.myllaume;
 import org.junit.Test;
 
 import picocli.CommandLine;
+import task.cli.myllaume.db.TaskRepository;
 
 import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
@@ -23,8 +24,8 @@ public class CommandSearchTest {
         File tempDir = Files.createTempDirectory("tests").toFile();
         tempDir.deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.getAbsolutePath());
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
 
@@ -67,8 +68,8 @@ public class CommandSearchTest {
         File tempDir = Files.createTempDirectory("tests").toFile();
         tempDir.deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.getAbsolutePath());
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
 
@@ -108,8 +109,8 @@ public class CommandSearchTest {
         File tempDir = Files.createTempDirectory("tests").toFile();
         tempDir.deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.getAbsolutePath());
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
 
@@ -144,8 +145,8 @@ public class CommandSearchTest {
         File tempDir = Files.createTempDirectory("tests").toFile();
         tempDir.deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.getAbsolutePath());
+        repo.initTables();
         repo.importFromCsv("src/test/resources/many.csv");
 
         ArrayList<Task> tasks = repo.getTasks(100);
@@ -187,8 +188,8 @@ public class CommandSearchTest {
         File tempDir = Files.createTempDirectory("tests").toFile();
         tempDir.deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        TaskRepository repo = new TaskRepository(tempDir.getAbsolutePath());
+        repo.initTables();
         repo.importFromCsv("src/test/resources/many.csv");
 
         ArrayList<Task> tasks = repo.getTasks(100);

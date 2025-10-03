@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import task.cli.myllaume.db.TaskRepository;
 
 @Command(name = "done", description = "Marquer une tâche comme terminée")
 public class CommandDone implements Runnable {
-    private final TaskRepositorySqlite repo;
+    private final TaskRepository repo;
 
-    public CommandDone(TaskRepositorySqlite repo) {
+    public CommandDone(TaskRepository repo) {
         this.repo = repo;
     }
 

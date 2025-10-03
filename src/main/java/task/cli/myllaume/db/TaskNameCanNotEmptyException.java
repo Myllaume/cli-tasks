@@ -1,4 +1,4 @@
-package task.cli.myllaume;
+package task.cli.myllaume.db;
 
 public class TaskNameCanNotEmptyException extends IllegalArgumentException {
     public TaskNameCanNotEmptyException() {

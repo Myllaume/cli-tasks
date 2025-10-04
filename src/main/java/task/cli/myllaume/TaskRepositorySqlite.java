@@ -57,9 +57,7 @@ public class TaskRepositorySqlite {
     }
 
     public Task createTask(String name, boolean completed, TaskPriority priority, Instant dueDate) throws Exception {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Le nom de la tâche ne peut pas être vide.");
-        }
+        Task.validateDescription(name);
 
         String sql = """
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at)
@@ -100,9 +98,7 @@ public class TaskRepositorySqlite {
 
     public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority, Instant dueDate)
             throws Exception {
-        if (name == null || name.trim().isEmpty()) {
-            throw new TaskNameCanNotEmptyException();
-        }
+        Task.validateDescription(name);
 
         Task parentTask = getTask(parentId);
         if (parentTask == null) {

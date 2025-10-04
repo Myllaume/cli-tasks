@@ -130,31 +130,31 @@ public class Task {
         return Duration.between(createdAt, doneAt);
     }
 
-    private static void validateId(int id) throws IllegalArgumentException {
+    public static void validateId(int id) throws IllegalArgumentException {
         if (id <= 0) {
             throw new IllegalArgumentException("ID must be positive");
         }
     }
 
-    private static void validateDescription(String description) throws IllegalArgumentException {
+    public static void validateDescription(String description) throws IllegalArgumentException {
         if (description == null || description.trim().isEmpty()) {
             throw new IllegalArgumentException("Description cannot be null or empty");
         }
     }
 
-    private static void validateFulltext(String fulltext) throws IllegalArgumentException {
+    public static void validateFulltext(String fulltext) throws IllegalArgumentException {
         if (fulltext == null || fulltext.trim().isEmpty()) {
             throw new IllegalArgumentException("Fulltext cannot be null or empty");
         }
     }
 
-    private static void validatePriority(TaskPriority priority) throws IllegalArgumentException {
+    public static void validatePriority(TaskPriority priority) throws IllegalArgumentException {
         if (priority == null) {
             throw new IllegalArgumentException("Priority cannot be null");
         }
     }
 
-    private static void validateCreatedAt(Instant createdAt) throws IllegalArgumentException {
+    public static void validateCreatedAt(Instant createdAt) throws IllegalArgumentException {
         if (createdAt == null) {
             throw new IllegalArgumentException("CreatedAt cannot be null");
         }

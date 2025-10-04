@@ -138,7 +138,7 @@ public class TaskRepositorySqliteTest {
             repo.createTask(null, false, TaskPriority.LOW, null);
             fail("Should have thrown IllegalArgumentException for null name");
         } catch (IllegalArgumentException e) {
-            assertEquals("Le nom de la tâche ne peut pas être vide.", e.getMessage());
+            assertEquals("Description cannot be null or empty", e.getMessage());
         }
     }
 
@@ -155,7 +155,7 @@ public class TaskRepositorySqliteTest {
             repo.createTask("   ", false, TaskPriority.LOW, null);
             fail("Should have thrown IllegalArgumentException for empty name");
         } catch (IllegalArgumentException e) {
-            assertEquals("Le nom de la tâche ne peut pas être vide.", e.getMessage());
+            assertEquals("Description cannot be null or empty", e.getMessage());
         }
     }
 

@@ -130,28 +130,46 @@ public class Task {
         return Duration.between(createdAt, doneAt);
     }
 
-    static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,
-            Instant createdAt, Instant dueDate, Instant doneAt, ArrayList<Task> subTasks) {
+    private static void validateId(int id) throws IllegalArgumentException {
         if (id <= 0) {
             throw new IllegalArgumentException("ID must be positive");
         }
+    }
+
+    private static void validateDescription(String description) throws IllegalArgumentException {
         if (description == null || description.trim().isEmpty()) {
             throw new IllegalArgumentException("Description cannot be null or empty");
         }
+    }
+
+    private static void validateFulltext(String fulltext) throws IllegalArgumentException {
         if (fulltext == null || fulltext.trim().isEmpty()) {
             throw new IllegalArgumentException("Fulltext cannot be null or empty");
         }
+    }
+
+    private static void validatePriority(TaskPriority priority) throws IllegalArgumentException {
         if (priority == null) {
             throw new IllegalArgumentException("Priority cannot be null");
         }
+    }
+
+    private static void validateCreatedAt(Instant createdAt) throws IllegalArgumentException {
         if (createdAt == null) {
             throw new IllegalArgumentException("CreatedAt cannot be null");
         }
+    }
+
+    static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,
+            Instant createdAt, Instant dueDate, Instant doneAt, ArrayList<Task> subTasks) {
+        validateId(id);
+        validateDescription(description);
+        validateFulltext(fulltext);
+        validatePriority(priority);
+        validateCreatedAt(createdAt);
         // dueDate can be null
         // doneAt can be null
-        if (subTasks == null) {
-            subTasks = new ArrayList<>();
-        }
+        // subTasks can be null
 
         return new Task(id, description, completed, fulltext, priority, createdAt, dueDate, doneAt, subTasks);
     }

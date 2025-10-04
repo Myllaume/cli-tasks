@@ -160,4 +160,62 @@ public class TaskTest {
             }
         }
     }
+
+    @Test
+    public void testValidateIdPositive() {
+        Task task = Task.of(1, "Test description", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null,
+                null);
+        assertNotNull(task);
+        assertEquals(1, task.getId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateIdZero() {
+        Task.of(0, "Test description", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateIdNegative() {
+        Task.of(-1, "Test description", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateDescriptionNull() {
+        Task.of(1, null, false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateDescriptionEmpty() {
+        Task.of(1, "", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateDescriptionWhitespace() {
+        Task.of(1, "   ", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateFulltextNull() {
+        Task.of(1, "Test description", false, null, TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateFulltextEmpty() {
+        Task.of(1, "Test description", false, "", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateFulltextWhitespace() {
+        Task.of(1, "Test description", false, "   ", TaskPriority.LOW, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidatePriorityNull() {
+        Task.of(1, "Test description", false, "testfulltext", null, Instant.now(), null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateCreatedAtNull() {
+        Task.of(1, "Test description", false, "testfulltext", TaskPriority.LOW, null, null, null, null);
+    }
 }

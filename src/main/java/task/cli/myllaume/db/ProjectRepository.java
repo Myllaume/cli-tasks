@@ -135,10 +135,8 @@ public class ProjectRepository extends Repository {
     }
 
     public int countProjects() throws Exception {
-        return executeCountQuery("SELECT COUNT(*) AS total FROM projects");
-    }
+        String sql = "SELECT COUNT(*) AS total FROM projects";
 
-    private int executeCountQuery(String sql) throws Exception {
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 ResultSet rs = pstmt.executeQuery()) {
@@ -149,4 +147,5 @@ public class ProjectRepository extends Repository {
             return 0;
         }
     }
+
 }

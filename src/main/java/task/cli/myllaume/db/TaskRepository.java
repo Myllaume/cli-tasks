@@ -28,8 +28,8 @@ public class TaskRepository extends Repository {
         }
 
         String sql = """
-                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, project_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -50,13 +50,13 @@ public class TaskRepository extends Repository {
             } else {
                 pstmt.setNull(6, java.sql.Types.INTEGER);
             }
+            // pstmt.setInt(7, projectId);
             pstmt.executeUpdate();
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     int id = rs.getInt(1);
                     return getTask(id);
-                    // return new Task(id, name, completed, fulltext, priority, null);
                 } else {
                     throw new SQLException("Impossible de récupérer l'ID généré.");
                 }

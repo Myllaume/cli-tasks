@@ -1,5 +1,7 @@
 package task.cli.myllaume.db;
 
+import java.time.Instant;
+
 import task.cli.myllaume.Project;
 import task.cli.myllaume.Task;
 import task.cli.myllaume.TaskPriority;
@@ -36,6 +38,11 @@ public class RepositoryManager {
 
     public ProjectRepository getProjectRepository() {
         return projectRepository;
+    }
+
+    public Task createTask(String name, boolean completed, TaskPriority priority, Instant dueDate, int projectId) throws Exception {
+        
+        // return getTaskRepository().createTask(name, completed, priority, dueDate, projectId);
     }
 
     public Task assignTaskToProject(int taskId, int projectId) throws Exception {

@@ -56,8 +56,9 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public Task createTask(String name, boolean completed, TaskPriority priority, Instant dueDate) throws Exception {
-        Task.validateDescription(name);
+    public Task createTask(String description, boolean completed, TaskPriority priority, Instant dueDate)
+            throws Exception {
+        StringUtils.throwNullOrEmptyString(description, "Description cannot be null or empty");
 
         String sql = """
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at)
@@ -66,9 +67,9 @@ public class TaskRepositorySqlite {
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            String fulltext = StringUtils.normalizeString(name);
+            String fulltext = StringUtils.normalizeString(description);
 
-            pstmt.setString(1, name);
+            pstmt.setString(1, description);
             pstmt.setBoolean(2, completed);
             pstmt.setString(3, fulltext);
             pstmt.setInt(4, priority.getLevel());
@@ -96,9 +97,10 @@ public class TaskRepositorySqlite {
         }
     }
 
-    public Task createSubTask(int parentId, String name, boolean completed, TaskPriority priority, Instant dueDate)
+    public Task createSubTask(int parentId, String description, boolean completed, TaskPriority priority,
+            Instant dueDate)
             throws Exception {
-        Task.validateDescription(name);
+        StringUtils.throwNullOrEmptyString(description, "Description cannot be null or empty");
 
         Task parentTask = getTask(parentId);
         if (parentTask == null) {
@@ -109,9 +111,9 @@ public class TaskRepositorySqlite {
         try (Connection conn = DriverManager.getConnection(url);
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            String fulltext = StringUtils.normalizeString(name);
+            String fulltext = StringUtils.normalizeString(description);
 
-            pstmt.setString(1, name);
+            pstmt.setString(1, description);
             pstmt.setBoolean(2, completed);
             pstmt.setString(3, fulltext);
             pstmt.setInt(4, priority.getLevel());
@@ -237,8 +239,15 @@ public class TaskRepositorySqlite {
                 while (rs.next()) {
                     subTasks.add(Task.fromSqlResult(rs));
                 }
-                parentTask.setSubTasks(subTasks);
-                return parentTask;
+                return Task.of(parentTask.getId(),
+                        parentTask.getDescription(),
+                        parentTask.getCompleted(),
+                        parentTask.getFulltext(),
+                        parentTask.getPriority(),
+                        parentTask.getCreatedAt(),
+                        parentTask.getDueDate(),
+                        parentTask.getDoneAt(),
+                        subTasks);
             }
         }
     }

@@ -23,14 +23,6 @@ public class TaskTest {
     }
 
     @Test
-    public void testSetDescription() {
-        Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null, null);
-        task.setDescription("Faire la vaisselle");
-        assertEquals("Faire la vaisselle", task.getDescription());
-    }
-
-    @Test
     public void testGetId() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
                 null, null);
@@ -47,28 +39,10 @@ public class TaskTest {
     }
 
     @Test
-    public void testSetCompleted() {
-        Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null, null);
-        task.setCompleted(true);
-        boolean expected = true;
-        assertEquals(expected, task.getCompleted());
-    }
-
-    @Test
     public void testGetFulltext() {
         Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
                 null, null);
         String expected = "fairelescourses";
-        assertEquals(expected, task.getFulltext());
-    }
-
-    @Test
-    public void testSetFulltext() {
-        Task task = Task.of(1, "Faire les courses", false, "fairelescourses", TaskPriority.LOW, Instant.now(), null,
-                null, null);
-        task.setFulltext("nouveaufulltext");
-        String expected = "nouveaufulltext";
         assertEquals(expected, task.getFulltext());
     }
 
@@ -179,7 +153,7 @@ public class TaskTest {
         Task.of(-1, "Test description", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testValidateDescriptionNull() {
         Task.of(1, null, false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
     }
@@ -194,7 +168,7 @@ public class TaskTest {
         Task.of(1, "   ", false, "testfulltext", TaskPriority.LOW, Instant.now(), null, null, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testValidateFulltextNull() {
         Task.of(1, "Test description", false, null, TaskPriority.LOW, Instant.now(), null, null, null);
     }
@@ -209,12 +183,12 @@ public class TaskTest {
         Task.of(1, "Test description", false, "   ", TaskPriority.LOW, Instant.now(), null, null, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testValidatePriorityNull() {
         Task.of(1, "Test description", false, "testfulltext", null, Instant.now(), null, null, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testValidateCreatedAtNull() {
         Task.of(1, "Test description", false, "testfulltext", TaskPriority.LOW, null, null, null, null);
     }

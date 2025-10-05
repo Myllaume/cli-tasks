@@ -136,8 +136,8 @@ public class TaskRepositorySqliteTest {
 
         try {
             repo.createTask(null, false, TaskPriority.LOW, null);
-            fail("Should have thrown IllegalArgumentException for null name");
-        } catch (IllegalArgumentException e) {
+            fail("Should have thrown NullPointerException for null name");
+        } catch (NullPointerException e) {
             assertEquals("Description cannot be null or empty", e.getMessage());
         }
     }

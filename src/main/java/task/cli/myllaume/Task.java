@@ -5,20 +5,30 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Objects;
+
+import task.cli.myllaume.utils.DbUtils;
+import task.cli.myllaume.utils.StringUtils;
 
 public class Task {
     private final int id;
-    private String description;
-    private boolean completed;
-    private String fulltext;
-    private TaskPriority priority;
-    private Instant createdAt;
-    private Instant dueDate;
-    private Instant doneAt;
-    private ArrayList<Task> subTasks;
+    private final String description;
+    private final boolean completed;
+    private final String fulltext;
+    private final TaskPriority priority;
+    private final Instant createdAt;
+    private final Instant dueDate;
+    private final Instant doneAt;
+    private final ArrayList<Task> subTasks;
 
-    private Task(int id, String description, boolean completed, String fulltext, TaskPriority priority,
-            Instant createdAt, Instant dueDate, Instant doneAt, ArrayList<Task> subTasks) {
+    private Task(int id,
+            String description, boolean completed,
+            String fulltext,
+            TaskPriority priority,
+            Instant createdAt,
+            Instant dueDate,
+            Instant doneAt,
+            ArrayList<Task> subTasks) {
         this.id = id;
         this.description = description;
         this.completed = completed;
@@ -38,40 +48,20 @@ public class Task {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public TaskPriority getPriority() {
         return priority;
-    }
-
-    public void setPriority(TaskPriority priority) {
-        this.priority = priority;
     }
 
     public boolean getCompleted() {
         return completed;
     }
 
-    public void setCompleted(boolean completed) {
-        this.completed = completed;
-    }
-
     public String getFulltext() {
         return this.fulltext;
     }
 
-    public void setFulltext(String fulltext) {
-        this.fulltext = fulltext;
-    }
-
     public ArrayList<Task> getSubTasks() {
         return subTasks;
-    }
-
-    public void setSubTasks(ArrayList<Task> subTasks) {
-        this.subTasks = subTasks;
     }
 
     public Instant getCreatedAt() {
@@ -130,43 +120,14 @@ public class Task {
         return Duration.between(createdAt, doneAt);
     }
 
-    public static void validateId(int id) throws IllegalArgumentException {
-        if (id <= 0) {
-            throw new IllegalArgumentException("ID must be positive");
-        }
-    }
-
-    public static void validateDescription(String description) throws IllegalArgumentException {
-        if (description == null || description.trim().isEmpty()) {
-            throw new IllegalArgumentException("Description cannot be null or empty");
-        }
-    }
-
-    public static void validateFulltext(String fulltext) throws IllegalArgumentException {
-        if (fulltext == null || fulltext.trim().isEmpty()) {
-            throw new IllegalArgumentException("Fulltext cannot be null or empty");
-        }
-    }
-
-    public static void validatePriority(TaskPriority priority) throws IllegalArgumentException {
-        if (priority == null) {
-            throw new IllegalArgumentException("Priority cannot be null");
-        }
-    }
-
-    public static void validateCreatedAt(Instant createdAt) throws IllegalArgumentException {
-        if (createdAt == null) {
-            throw new IllegalArgumentException("CreatedAt cannot be null");
-        }
-    }
-
     static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,
             Instant createdAt, Instant dueDate, Instant doneAt, ArrayList<Task> subTasks) {
-        validateId(id);
-        validateDescription(description);
-        validateFulltext(fulltext);
-        validatePriority(priority);
-        validateCreatedAt(createdAt);
+        DbUtils.throwNullOrNegativeNumber(id, "ID must be a positive integer");
+        StringUtils.throwNullOrEmptyString(description, "Description cannot be null or empty");
+        StringUtils.throwNullOrEmptyString(fulltext, "Fulltext cannot be null or empty");
+        Objects.requireNonNull(completed, "Completed cannot be null");
+        Objects.requireNonNull(priority, "Priority cannot be null");
+        Objects.requireNonNull(createdAt, "CreatedAt cannot be null");
         // dueDate can be null
         // doneAt can be null
         // subTasks can be null

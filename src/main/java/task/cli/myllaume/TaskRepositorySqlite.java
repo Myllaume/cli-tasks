@@ -2,7 +2,6 @@ package task.cli.myllaume;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,48 +11,13 @@ import java.util.ArrayList;
 
 import task.cli.myllaume.csv.TaskCsv;
 import task.cli.myllaume.csv.TaskRepositoryCsv;
+import task.cli.myllaume.db.DatabaseRepository;
 import task.cli.myllaume.utils.StringUtils;
 
-public class TaskRepositorySqlite {
-    private final String url;
+public class TaskRepositorySqlite extends DatabaseRepository {
 
     public TaskRepositorySqlite(String dbPath) {
-        if (dbPath == null || dbPath.trim().isEmpty()) {
-            throw new IllegalArgumentException("Le chemin de la base de données ne peut pas être nul ou vide.");
-        }
-
-        String normalizedPath = dbPath.trim();
-        if (!normalizedPath.endsWith(System.getProperty("file.separator"))) {
-            normalizedPath += System.getProperty("file.separator");
-        }
-
-        this.url = "jdbc:sqlite:" + normalizedPath + "tasks.db";
-    }
-
-    public void init() throws Exception {
-        try (Connection conn = DriverManager.getConnection(url)) {
-            try (Statement stmt = conn.createStatement()) {
-
-                stmt.execute("""
-                            CREATE TABLE IF NOT EXISTS tasks (
-                                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                name TEXT NOT NULL,
-                                completed BOOLEAN NOT NULL,
-                                fulltext TEXT NOT NULL,
-                                priority INTEGER NOT NULL,
-                                created_at INTEGER NOT NULL,
-                                due_at INTEGER NULL,
-                                done_at INTEGER NULL,
-                                parent_id INTEGER NULL,
-                                CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
-                            )
-                        """);
-                // Improve concurrency and planner accuracy for SQLite
-                // stmt.execute("PRAGMA journal_mode = WAL");
-                // stmt.execute("PRAGMA synchronous = NORMAL");
-                stmt.execute("ANALYZE");
-            }
-        }
+        super(dbPath);
     }
 
     public Task createTask(TaskData data) throws Exception {
@@ -62,7 +26,7 @@ public class TaskRepositorySqlite {
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             String fulltext = StringUtils.normalizeString(data.getDescription());
@@ -105,7 +69,7 @@ public class TaskRepositorySqlite {
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             String fulltext = StringUtils.normalizeString(data.getDescription());
@@ -147,7 +111,7 @@ public class TaskRepositorySqlite {
             throw new UnknownTaskException(id);
         }
 
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement deletePstmt = conn.prepareStatement(deleteSql)) {
 
             deletePstmt.setInt(1, id);
@@ -162,7 +126,7 @@ public class TaskRepositorySqlite {
     public Task getTask(int id) throws Exception {
         String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks WHERE id = ?";
 
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
@@ -179,7 +143,7 @@ public class TaskRepositorySqlite {
     public ArrayList<Task> getTasks(int limit) throws Exception {
         String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks ORDER BY name ASC LIMIT ?";
 
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, limit);
@@ -206,7 +170,7 @@ public class TaskRepositorySqlite {
                 LIMIT ?
                 """, dueInDays);
 
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, limit);
@@ -232,7 +196,7 @@ public class TaskRepositorySqlite {
                 WHERE parent_id = ?
                 ORDER BY name ASC LIMIT ?
                 """;
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
 
             subPstmt.setInt(1, id);
@@ -263,7 +227,7 @@ public class TaskRepositorySqlite {
                 ORDER BY id DESC LIMIT 1
                 """;
 
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 ResultSet rs = pstmt.executeQuery()) {
 
@@ -276,7 +240,7 @@ public class TaskRepositorySqlite {
     }
 
     private ArrayList<Task> searchTasksProcess(String keyword, int limit, String sql) throws Exception {
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             keyword = StringUtils.normalizeString(keyword);
@@ -333,7 +297,7 @@ public class TaskRepositorySqlite {
         String fulltext = StringUtils.normalizeString(name);
 
         String sql = "UPDATE tasks SET name = ?, fulltext = ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, name);
@@ -353,7 +317,7 @@ public class TaskRepositorySqlite {
         }
 
         String sql = "UPDATE tasks SET completed = ?, done_at = ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setBoolean(1, completed);
@@ -377,7 +341,7 @@ public class TaskRepositorySqlite {
         }
 
         String sql = "UPDATE tasks SET priority = ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, priority.getLevel());
@@ -396,7 +360,7 @@ public class TaskRepositorySqlite {
         }
 
         String sql = "UPDATE tasks SET due_at = ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             if (dueDate == null) {
@@ -416,7 +380,7 @@ public class TaskRepositorySqlite {
     }
 
     private int executeCountQuery(String sql) throws Exception {
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -456,7 +420,7 @@ public class TaskRepositorySqlite {
                 INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             conn.setAutoCommit(false);
             for (TaskCsv task : tasks) {

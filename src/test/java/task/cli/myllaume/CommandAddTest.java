@@ -25,7 +25,7 @@ public class CommandAddTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));
@@ -62,7 +62,7 @@ public class CommandAddTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));

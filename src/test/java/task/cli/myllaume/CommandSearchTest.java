@@ -24,7 +24,7 @@ public class CommandSearchTest {
         tempDir.deleteOnExit();
 
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
 
@@ -68,7 +68,7 @@ public class CommandSearchTest {
         tempDir.deleteOnExit();
 
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
 
@@ -109,7 +109,7 @@ public class CommandSearchTest {
         tempDir.deleteOnExit();
 
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        repo.initTables();
 
         repo.importFromCsv("src/test/resources/many.csv");
 
@@ -145,7 +145,7 @@ public class CommandSearchTest {
         tempDir.deleteOnExit();
 
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        repo.initTables();
         repo.importFromCsv("src/test/resources/many.csv");
 
         ArrayList<Task> tasks = repo.getTasks(100);
@@ -188,7 +188,7 @@ public class CommandSearchTest {
         tempDir.deleteOnExit();
 
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.init();
+        repo.initTables();
         repo.importFromCsv("src/test/resources/many.csv");
 
         ArrayList<Task> tasks = repo.getTasks(100);

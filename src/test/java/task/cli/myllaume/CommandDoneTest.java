@@ -22,7 +22,7 @@ public class CommandDoneTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         TaskData taskData = TaskData.of("Test task", false, TaskPriority.LOW, Instant.now(), null, null);
         Task task = repo.createTask(taskData);
@@ -59,7 +59,7 @@ public class CommandDoneTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         TaskData firstTaskData = TaskData.of("First task", false, TaskPriority.LOW, Instant.now(), null, null);
         Task firstTask = repo.createTask(firstTaskData);
@@ -100,7 +100,7 @@ public class CommandDoneTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         TaskData data = TaskData.of("Completed task", true, TaskPriority.LOW, Instant.now(), null, Instant.now());
         Task task = repo.createTask(data);
@@ -137,7 +137,7 @@ public class CommandDoneTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));
@@ -168,7 +168,7 @@ public class CommandDoneTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
 
         try {
             System.setErr(new PrintStream(err));

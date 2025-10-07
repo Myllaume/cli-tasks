@@ -22,7 +22,7 @@ public class CommandListTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
         
         Instant now = Instant.now();
         TaskData taskOne = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
@@ -58,7 +58,7 @@ public class CommandListTest {
 
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.init();
+        repo.initTables();
         
         Instant now = Instant.now();
         TaskData taskData = TaskData.of("Test", false, TaskPriority.LOW, now, null, null);

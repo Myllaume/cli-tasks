@@ -25,7 +25,7 @@ public class App implements Runnable {
         CommandLine cmd = new CommandLine(new App());
 
         try {
-            repo.init();
+            repo.initTables();
         } catch (Exception e) {
             System.out.println("Erreur lors de l'initialisation de la base de données : " + e.getMessage());
         }

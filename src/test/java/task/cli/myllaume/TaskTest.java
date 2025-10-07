@@ -102,7 +102,7 @@ public class TaskTest {
         tempDir.toFile().deleteOnExit();
 
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.init();
+        repo.initTables();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);

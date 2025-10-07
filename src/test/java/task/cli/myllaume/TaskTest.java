@@ -108,7 +108,8 @@ public class TaskTest {
         LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
         Instant dueDate = localDateTime.atZone(ZoneId.of("Europe/Paris")).toInstant();
 
-        Task originalTask = repo.createTask("Tâche de test SQL", true, TaskPriority.LOW, dueDate);
+        TaskData taskData = TaskData.of("Tâche de test SQL", true, TaskPriority.LOW, Instant.now(), dueDate, null);
+        Task originalTask = repo.createTask(taskData);
 
         String url = repo.getUrl();
         String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks WHERE id = ?";

@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 
 public class CommandRemoveTest {
@@ -24,8 +25,11 @@ public class CommandRemoveTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        repo.createTask("One", false, TaskPriority.LOW, null);
-        Task task2 = repo.createTask("Two", true, TaskPriority.LOW, null);
+        Instant now = Instant.now();
+        TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
+        repo.createTask(taskOneData);
+        TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
+        Task task2 = repo.createTask(taskTwoData);
 
         try {
             System.setErr(new PrintStream(err));
@@ -61,8 +65,11 @@ public class CommandRemoveTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        repo.createTask("One", false, TaskPriority.LOW, null);
-        repo.createTask("Two", true, TaskPriority.LOW, null);
+        Instant now = Instant.now();
+        TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
+        repo.createTask(taskOneData);
+        TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
+        repo.createTask(taskTwoData);
 
         try {
             System.setErr(new PrintStream(err));

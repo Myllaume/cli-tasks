@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 
 public class CommandListTest {
 
@@ -22,8 +23,12 @@ public class CommandListTest {
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
-        repo.createTask("One", false, TaskPriority.LOW, null);
-        repo.createTask("Two", true, TaskPriority.LOW, null);
+        
+        Instant now = Instant.now();
+        TaskData taskOne = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
+        repo.createTask(taskOne);
+        TaskData taskTwo = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
+        repo.createTask(taskTwo);
 
         try {
             System.setErr(new PrintStream(err));
@@ -54,7 +59,10 @@ public class CommandListTest {
         String dbPath = tempDir.toString();
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
-        repo.createTask("Test", false, TaskPriority.LOW, null);
+        
+        Instant now = Instant.now();
+        TaskData taskData = TaskData.of("Test", false, TaskPriority.LOW, now, null, null);
+        repo.createTask(taskData);
 
         try {
             System.setErr(new PrintStream(err));

@@ -2,41 +2,30 @@ package task.cli.myllaume;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import task.cli.myllaume.utils.DbUtils;
-import task.cli.myllaume.utils.StringUtils;
+import task.cli.myllaume.utils.Validators;
 
-public class Task {
+public class Task extends TaskData {
     private final int id;
-    private final String description;
-    private final boolean completed;
     private final String fulltext;
-    private final TaskPriority priority;
-    private final Instant createdAt;
-    private final Instant dueDate;
-    private final Instant doneAt;
     private final ArrayList<Task> subTasks;
 
     private Task(int id,
-            String description, boolean completed,
+            String description,
+            boolean completed,
             String fulltext,
             TaskPriority priority,
             Instant createdAt,
             Instant dueDate,
             Instant doneAt,
             ArrayList<Task> subTasks) {
+        super(description, completed, priority, createdAt, dueDate, doneAt);
+
         this.id = id;
-        this.description = description;
-        this.completed = completed;
         this.fulltext = fulltext;
-        this.priority = priority;
-        this.createdAt = createdAt;
-        this.dueDate = dueDate;
-        this.doneAt = doneAt;
         this.subTasks = subTasks;
     }
 
@@ -76,17 +65,8 @@ public class Task {
         return doneAt;
     }
 
-    @Override
-    public String toString() {
-        return "[" + (completed ? "✓" : " ") + "] " + description;
-    }
-
     public String toIdString() {
         return (Integer.toString(id) + ". " + description);
-    }
-
-    public String toCsv() {
-        return description + "," + (completed ? "true" : "false");
     }
 
     static public Task fromSqlResult(ResultSet sqlResult) throws SQLException {
@@ -113,18 +93,11 @@ public class Task {
                 doneAt, null);
     }
 
-    public Duration getTaskDuration() {
-        if (createdAt == null || doneAt == null) {
-            return null;
-        }
-        return Duration.between(createdAt, doneAt);
-    }
-
     static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,
             Instant createdAt, Instant dueDate, Instant doneAt, ArrayList<Task> subTasks) {
-        DbUtils.throwNullOrNegativeNumber(id, "ID must be a positive integer");
-        StringUtils.throwNullOrEmptyString(description, "Description cannot be null or empty");
-        StringUtils.throwNullOrEmptyString(fulltext, "Fulltext cannot be null or empty");
+        Validators.throwNullOrNegativeNumber(id, "ID must be a positive integer");
+        Validators.throwNullOrEmptyString(description, "Description cannot be null or empty");
+        Validators.throwNullOrEmptyString(fulltext, "Fulltext cannot be null or empty");
         Objects.requireNonNull(completed, "Completed cannot be null");
         Objects.requireNonNull(priority, "Priority cannot be null");
         Objects.requireNonNull(createdAt, "CreatedAt cannot be null");

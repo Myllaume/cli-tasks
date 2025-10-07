@@ -115,7 +115,7 @@ public class TaskRepositorySqliteTest {
         LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
         Instant dueDate = localDateTime.atZone(timeZone).toInstant();
 
-        Task task = repo.createTask("Test Task", false, TaskPriority.LOW, dueDate);
+        Task task = repo.createTask(TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), dueDate, null));
 
         assertNotNull(task);
         assertEquals("Test Task", task.getDescription());
@@ -135,7 +135,9 @@ public class TaskRepositorySqliteTest {
         repo.init();
 
         try {
-            repo.createTask(null, false, TaskPriority.LOW, null);
+            Instant now = Instant.now();
+            TaskData nullTaskData = TaskData.of(null, false, TaskPriority.LOW, now, null, null);
+            repo.createTask(nullTaskData);
             fail("Should have thrown NullPointerException for null name");
         } catch (NullPointerException e) {
             assertEquals("Description cannot be null or empty", e.getMessage());
@@ -152,7 +154,7 @@ public class TaskRepositorySqliteTest {
         repo.init();
 
         try {
-            repo.createTask("   ", false, TaskPriority.LOW, null);
+            repo.createTask(TaskData.of("   ", false, TaskPriority.LOW, Instant.now(), null, null));
             fail("Should have thrown IllegalArgumentException for empty name");
         } catch (IllegalArgumentException e) {
             assertEquals("Description cannot be null or empty", e.getMessage());
@@ -168,7 +170,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task addedTask = repo.createTask("Task to Remove", false, TaskPriority.LOW, null);
+        Task addedTask = repo.createTask(TaskData.of("Task to Remove", false, TaskPriority.LOW, Instant.now(), null, null));
         assertNotNull(addedTask);
         int taskId = addedTask.getId();
 
@@ -208,10 +210,10 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Task1", false, TaskPriority.LOW, null);
-        repo.createTask("Task2", false, TaskPriority.MEDIUM, null);
-        repo.createTask("Task3", false, TaskPriority.LOW, null);
-        repo.createTask("Task4", false, TaskPriority.HIGH, null);
+        Task task = repo.createTask(TaskData.of("Task1", false, TaskPriority.LOW, Instant.now(), null, null));
+        repo.createTask(TaskData.of("Task2", false, TaskPriority.MEDIUM, Instant.now(), null, null));
+        repo.createTask(TaskData.of("Task3", false, TaskPriority.LOW, Instant.now(), null, null));
+        repo.createTask(TaskData.of("Task4", false, TaskPriority.HIGH, Instant.now(), null, null));
 
         ArrayList<Task> tasks = repo.getTasks(3);
 
@@ -316,7 +318,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task addedTask = repo.createTask("Test Task", false, TaskPriority.LOW, null);
+        Task addedTask = repo.createTask(TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), null, null));
         assertNotNull(addedTask);
         int taskId = addedTask.getId();
 
@@ -347,7 +349,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
+        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
 
         Task updatedTask = repo.updateTaskName(originalTask.getId(), "Updated Task");
 
@@ -363,7 +365,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
+        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
         assertNull(originalTask.getDoneAt());
 
         Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), true);
@@ -380,7 +382,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task originalTask = repo.createTask("Original Task", true, TaskPriority.LOW, null);
+        Task originalTask = repo.createTask(TaskData.of("Original Task", true, TaskPriority.LOW, Instant.now(), null, null));
         assertNotNull(originalTask.getDoneAt());
 
         Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), false);
@@ -397,7 +399,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
+        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
 
         Task updatedTask = repo.updateTaskPriority(originalTask.getId(), TaskPriority.HIGH);
 
@@ -412,7 +414,7 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task originalTask = repo.createTask("Original Task", false, TaskPriority.LOW, null);
+        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
 
         Instant tomorrow = LocalDateTime.now().plusDays(1)
                 .atZone(timeZone)
@@ -432,16 +434,16 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task parentTask = repo.createTask("Parent Task", false, TaskPriority.MEDIUM, null);
+        Task parentTask = repo.createTask(TaskData.of("Parent Task", false, TaskPriority.MEDIUM, Instant.now(), null, null));
         assertNotNull(parentTask);
 
         Instant tomorrow = LocalDateTime.now().plusDays(1)
                 .atZone(timeZone)
                 .toInstant();
 
-        Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW, tomorrow);
-        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW, null);
-        repo.createSubTask(parentTask.getId(), "Sub Task", false, TaskPriority.LOW, null);
+        Task subTask = repo.createSubTask(parentTask.getId(), TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), tomorrow, null));
+        repo.createSubTask(parentTask.getId(), TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
+        repo.createSubTask(parentTask.getId(), TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
 
         Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId(), 2);
         assertNotNull(taskFromDb);
@@ -467,7 +469,7 @@ public class TaskRepositorySqliteTest {
         repo.init();
 
         try {
-            repo.createSubTask(0, "Sub Task", false, TaskPriority.LOW, null);
+            repo.createSubTask(0, TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
             fail("Should throw for unknown parent task");
         } catch (UnknownTaskException e) {
             assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
@@ -482,9 +484,11 @@ public class TaskRepositorySqliteTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
         repo.init();
 
-        Task highTask = repo.createTask("High Priority Task", false, TaskPriority.HIGH, null);
-        Task lowTask = repo.createTask("Low Priority Task", false, TaskPriority.LOW, null);
-        Task mediumTask = repo.createTask("Medium Priority Task", false, TaskPriority.MEDIUM, null);
+        Instant now = Instant.now();
+
+        Task highTask = repo.createTask(TaskData.of("High Priority Task", false, TaskPriority.HIGH, now, null, null));
+        Task lowTask = repo.createTask(TaskData.of("Low Priority Task", false, TaskPriority.LOW, now, null, null));
+        Task mediumTask = repo.createTask(TaskData.of("Medium Priority Task", false, TaskPriority.MEDIUM, now, null, null));
 
         Instant tomorrow = LocalDateTime.now().plusDays(1)
                 .atZone(timeZone)
@@ -496,16 +500,16 @@ public class TaskRepositorySqliteTest {
                 .atZone(timeZone)
                 .toInstant();
 
-        Task tomorrowTask = repo.createTask("Tomorrow Task", false, TaskPriority.MEDIUM, tomorrow);
-        Task tomorrowTaskNewer = repo.createTask("Tomorrow Task", false, TaskPriority.MEDIUM, tomorrow);
-        Task nextDayTask = repo.createTask("Next Day Task", false, TaskPriority.MEDIUM, nextDay);
-        Task nextWeekTask = repo.createTask("Next week Task", false, TaskPriority.MEDIUM, nextWeek);
+        Task tomorrowTask = repo.createTask(TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
+        Task tomorrowTaskNewer = repo.createTask(TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
+        Task nextDayTask = repo.createTask(TaskData.of("Next Day Task", false, TaskPriority.MEDIUM, now, nextDay, null));
+        Task nextWeekTask = repo.createTask(TaskData.of("Next week Task", false, TaskPriority.MEDIUM, now, nextWeek, null));
         // Not in result because is done
-        repo.createTask("Done Task", true, TaskPriority.MEDIUM, null);
+        repo.createTask(TaskData.of("Done Task", true, TaskPriority.MEDIUM, now, null, null));
         // Not in result because is subtask
-        repo.createSubTask(tomorrowTask.getId(), "Sub Task", false, TaskPriority.MEDIUM, null);
+        repo.createSubTask(tomorrowTask.getId(), TaskData.of("Sub Task", false, TaskPriority.MEDIUM, now, null, null));
         // Not in result because of the limit
-        repo.createTask("Next week Task", false, TaskPriority.LOW, null);
+        repo.createTask(TaskData.of("Next week Task", false, TaskPriority.LOW, now, null, null));
 
         ArrayList<Task> tasks = repo.getTasksOrderByPriority(3, 7);
 

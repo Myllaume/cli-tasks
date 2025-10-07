@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 
 public class CommandDoneTest {
 
@@ -23,7 +24,8 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Test task", false, TaskPriority.LOW, null);
+        TaskData taskData = TaskData.of("Test task", false, TaskPriority.LOW, Instant.now(), null, null);
+        Task task = repo.createTask(taskData);
 
         try {
             System.setErr(new PrintStream(err));
@@ -59,8 +61,10 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task firstTask = repo.createTask("First task", false, TaskPriority.LOW, null);
-        Task lastTask = repo.createTask("Last task", false, TaskPriority.HIGH, null);
+        TaskData firstTaskData = TaskData.of("First task", false, TaskPriority.LOW, Instant.now(), null, null);
+        Task firstTask = repo.createTask(firstTaskData);
+        TaskData lastTaskData = TaskData.of("Last task", false, TaskPriority.HIGH, Instant.now(), null, null);
+        Task lastTask = repo.createTask(lastTaskData);
         assertFalse(lastTask.getCompleted());
 
         try {
@@ -98,7 +102,8 @@ public class CommandDoneTest {
         TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
         repo.init();
 
-        Task task = repo.createTask("Completed task", true, TaskPriority.LOW, null);
+        TaskData data = TaskData.of("Completed task", true, TaskPriority.LOW, Instant.now(), null, Instant.now());
+        Task task = repo.createTask(data);
 
         try {
             System.setErr(new PrintStream(err));

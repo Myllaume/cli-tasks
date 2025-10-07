@@ -1,5 +1,6 @@
 package task.cli.myllaume;
 
+import java.time.Instant;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -24,7 +25,8 @@ public class CommandAdd implements Runnable {
     @Override
     public void run() {
         try {
-            Task task = repo.createTask(description, completed, TaskPriority.fromLevel(priority), null);
+            Task task = repo.createTask(
+                    TaskData.of(description, completed, TaskPriority.fromLevel(priority), Instant.now(), null, null));
             System.out.println("La tâche '" + task.toIdString() + "' a été ajoutée.");
         } catch (Exception e) {
             System.out.println("La tâche n'a pas été ajoutée: " + e.getMessage());

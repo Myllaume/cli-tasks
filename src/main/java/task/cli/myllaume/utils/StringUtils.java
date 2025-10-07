@@ -14,11 +14,5 @@ public class StringUtils {
         return normalized;
     }
 
-    public static void throwNullOrEmptyString(String str, String message) throws NullPointerException, IllegalArgumentException {
-        Objects.requireNonNull(str, message);
-
-        if (str.trim().isEmpty()) {
-            throw new IllegalArgumentException(message);
-        }
-    }
+    
 }

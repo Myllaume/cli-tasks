@@ -29,6 +29,7 @@ public abstract class DatabaseRepository {
         try (Connection conn = getConnection()) {
             try (Statement stmt = conn.createStatement()) {
                 createTasksTable(stmt);
+                createProjectsTable(stmt);
 
                 stmt.execute("ANALYZE");
             }
@@ -48,6 +49,17 @@ public abstract class DatabaseRepository {
                         done_at INTEGER NULL,
                         parent_id INTEGER NULL,
                         CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+                    )
+                """);
+    }
+
+    private void createProjectsTable(Statement stmt) throws SQLException {
+        stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS projects (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL UNIQUE,
+                        fulltext TEXT NOT NULL,
+                        created_at INTEGER NOT NULL
                     )
                 """);
     }

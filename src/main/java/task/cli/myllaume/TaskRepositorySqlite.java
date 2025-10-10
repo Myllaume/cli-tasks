@@ -20,53 +20,10 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         super(dbPath);
     }
 
-    public Task createTask(TaskData data) throws Exception {
+    public Task createTask(TaskData data, int projectId) throws Exception {
 
         String sql = """
-                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """;
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            String fulltext = StringUtils.normalizeString(data.getDescription());
-
-            pstmt.setString(1, data.getDescription());
-            pstmt.setBoolean(2, data.getCompleted());
-            pstmt.setString(3, fulltext);
-            pstmt.setInt(4, data.getPriority().getLevel());
-            if (data.getDueDate() == null) {
-                pstmt.setNull(5, java.sql.Types.INTEGER);
-            } else {
-                pstmt.setLong(5, data.getDueDate().getEpochSecond());
-            }
-            if (data.getCompleted()) {
-                pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
-            } else {
-                pstmt.setNull(6, java.sql.Types.INTEGER);
-            }
-            pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
-            pstmt.executeUpdate();
-
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    int id = rs.getInt(1);
-                    return getTask(id);
-                } else {
-                    throw new SQLException("Impossible de récupérer l'ID généré.");
-                }
-            }
-        }
-    }
-
-    public Task createSubTask(int parentId, TaskData data) throws Exception {
-        Task parentTask = getTask(parentId);
-        if (parentTask == null) {
-            throw new UnknownTaskException(parentId);
-        }
-
-        String sql = """
-                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
+                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, project_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = getConnection();
@@ -89,7 +46,52 @@ public class TaskRepositorySqlite extends DatabaseRepository {
                 pstmt.setNull(6, java.sql.Types.INTEGER);
             }
             pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
+            pstmt.setInt(8, projectId);
+            pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    return getTask(id);
+                } else {
+                    throw new SQLException("Impossible de récupérer l'ID généré.");
+                }
+            }
+        }
+    }
+
+    public Task createSubTask(int parentId, TaskData data) throws Exception {
+        Task parentTask = getTask(parentId);
+        if (parentTask == null) {
+            throw new UnknownTaskException(parentId);
+        }
+
+        String sql = """
+                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id, project_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            String fulltext = StringUtils.normalizeString(data.getDescription());
+
+            pstmt.setString(1, data.getDescription());
+            pstmt.setBoolean(2, data.getCompleted());
+            pstmt.setString(3, fulltext);
+            pstmt.setInt(4, data.getPriority().getLevel());
+            if (data.getDueDate() == null) {
+                pstmt.setNull(5, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setLong(5, data.getDueDate().getEpochSecond());
+            }
+            if (data.getCompleted()) {
+                pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
+            } else {
+                pstmt.setNull(6, java.sql.Types.INTEGER);
+            }
+            pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
             pstmt.setInt(8, parentTask.getId());
+            pstmt.setInt(9, parentTask.getProjectId());
             pstmt.executeUpdate();
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
@@ -207,6 +209,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
                     subTasks.add(Task.fromSqlResult(rs));
                 }
                 return Task.of(parentTask.getId(),
+                        parentTask.getProjectId(),
                         parentTask.getDescription(),
                         parentTask.getCompleted(),
                         parentTask.getFulltext(),

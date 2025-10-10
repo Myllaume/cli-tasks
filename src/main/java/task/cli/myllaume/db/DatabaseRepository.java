@@ -2,6 +2,7 @@ package task.cli.myllaume.db;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -23,6 +24,22 @@ public abstract class DatabaseRepository {
 
     protected Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url);
+    }
+
+    public void throwIfDbDoesNotExist() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks', 'projects')";
+
+        try (Connection conn = getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(
+                        sql)) {
+
+            if (!rs.next() || rs.getInt(1) != 2) {
+                throw new SQLException("Database is not initialized");
+            }
+        } catch (SQLException e) {
+            throw new SQLException("Database is not initialized", e);
+        }
     }
 
     public void initTables() throws SQLException {
@@ -48,7 +65,9 @@ public abstract class DatabaseRepository {
                         due_at INTEGER NULL,
                         done_at INTEGER NULL,
                         parent_id INTEGER NULL,
-                        CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+                        project_id INTEGER NOT NULL,
+                        CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                        CONSTRAINT fk_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
                     )
                 """);
     }

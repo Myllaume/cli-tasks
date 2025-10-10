@@ -10,10 +10,12 @@ import task.cli.myllaume.utils.Validators;
 
 public class Task extends TaskData {
     private final int id;
+    private final int projectId;
     private final String fulltext;
     private final ArrayList<Task> subTasks;
 
     private Task(int id,
+            int projectId,
             String description,
             boolean completed,
             String fulltext,
@@ -25,12 +27,17 @@ public class Task extends TaskData {
         super(description, completed, priority, createdAt, dueDate, doneAt);
 
         this.id = id;
+        this.projectId = projectId;
         this.fulltext = fulltext;
         this.subTasks = subTasks;
     }
 
     public int getId() {
         return id;
+    }
+
+    public int getProjectId() {
+        return projectId;
     }
 
     public String getDescription() {
@@ -71,6 +78,7 @@ public class Task extends TaskData {
 
     static public Task fromSqlResult(ResultSet sqlResult) throws SQLException {
         int id = sqlResult.getInt("id");
+        int projectId = sqlResult.getInt("project_id");
         String description = sqlResult.getString("name");
         boolean completed = sqlResult.getBoolean("completed");
         String fulltext = sqlResult.getString("fulltext");
@@ -89,13 +97,22 @@ public class Task extends TaskData {
             doneAt = Instant.ofEpochSecond(doneAtSeconds);
         }
 
-        return Task.of(id, description, completed, fulltext, TaskPriority.fromLevel(priority), createdAt, dueDate,
+        return Task.of(id, projectId, description, completed, fulltext, TaskPriority.fromLevel(priority), createdAt, dueDate,
                 doneAt, null);
     }
 
-    static public Task of(int id, String description, boolean completed, String fulltext, TaskPriority priority,
-            Instant createdAt, Instant dueDate, Instant doneAt, ArrayList<Task> subTasks) {
+    static public Task of(int id,
+    int projectId,
+    String description,
+    boolean completed,
+    String fulltext,
+    TaskPriority priority,
+    Instant createdAt,
+    Instant dueDate,
+    Instant doneAt,
+    ArrayList<Task> subTasks) {
         Validators.throwNullOrNegativeNumber(id, "ID must be a positive integer");
+        Validators.throwNullOrNegativeNumber(projectId, "Project ID must be a positive integer");
         Validators.throwNullOrEmptyString(description, "Description cannot be null or empty");
         Validators.throwNullOrEmptyString(fulltext, "Fulltext cannot be null or empty");
         Objects.requireNonNull(completed, "Completed cannot be null");
@@ -105,7 +122,7 @@ public class Task extends TaskData {
         // doneAt can be null
         // subTasks can be null
 
-        return new Task(id, description, completed, fulltext, priority, createdAt, dueDate, doneAt, subTasks);
+        return new Task(id, projectId, description, completed, fulltext, priority, createdAt, dueDate, doneAt, subTasks);
     }
 
 }

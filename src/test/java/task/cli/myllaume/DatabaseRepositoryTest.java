@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import task.cli.myllaume.db.DatabaseRepository;
@@ -58,7 +59,6 @@ public class DatabaseRepositoryTest {
                     .executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'");
             assertTrue("Table 'projects' should exist", rsProjectsTable.next());
             assertEquals("projects", rsProjectsTable.getString("name"));
-
         }
     }
 
@@ -90,6 +90,16 @@ public class DatabaseRepositoryTest {
         try {
             new TestDatabaseRepository("   ");
             fail("Should have thrown IllegalArgumentException for empty path");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Database path cannot be null or empty", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testConstructorWithWhitespaceOnlyPath() {
+        try {
+            new TestDatabaseRepository("   \t\n   ");
+            fail("Should have thrown IllegalArgumentException for whitespace-only path");
         } catch (IllegalArgumentException e) {
             assertEquals("Database path cannot be null or empty", e.getMessage());
         }
@@ -132,26 +142,11 @@ public class DatabaseRepositoryTest {
         String dbPath = tempDir.toString();
         TestDatabaseRepository repo = new TestDatabaseRepository(dbPath);
 
-        // Première initialisation
         repo.initTables();
 
-        // Vérifier que les tables existent
+        repo.initTables();
+
         String url = repo.getUrl();
-        try (Connection conn = DriverManager.getConnection(url)) {
-            Statement stmt = conn.createStatement();
-            ResultSet rsTasksTable = stmt
-                    .executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'");
-            assertTrue(rsTasksTable.next());
-            ResultSet rsProjectsTable = stmt
-                    .executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'");
-            assertTrue(rsProjectsTable.next());
-        }
-
-        // Deuxième initialisation - ne devrait pas poser de problème grâce à "IF NOT
-        // EXISTS"
-        repo.initTables();
-
-        // Vérifier que les tables existent toujours
         try (Connection conn = DriverManager.getConnection(url)) {
             Statement stmt = conn.createStatement();
             ResultSet rsTasksTable = stmt
@@ -164,12 +159,53 @@ public class DatabaseRepositoryTest {
     }
 
     @Test
-    public void testConstructorWithWhitespaceOnlyPath() {
+    public void testThrowIfDbDoesNotExistWithUninitializedDb() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TestDatabaseRepository repo = new TestDatabaseRepository(dbPath);
+
         try {
-            new TestDatabaseRepository("   \t\n   ");
-            fail("Should have thrown IllegalArgumentException for whitespace-only path");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Database path cannot be null or empty", e.getMessage());
+            repo.throwIfDbDoesNotExist();
+            fail("Should have thrown SQLException for uninitialized database");
+        } catch (SQLException e) {
+            assertEquals("Database is not initialized", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testThrowIfDbDoesNotExistWithInitializedDb() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TestDatabaseRepository repo = new TestDatabaseRepository(dbPath);
+
+        repo.initTables();
+
+        repo.throwIfDbDoesNotExist();
+    }
+
+    @Test
+    public void testThrowIfDbDoesNotExistWithPartiallyInitializedDb() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        String dbPath = tempDir.toString();
+        TestDatabaseRepository repo = new TestDatabaseRepository(dbPath);
+
+        String url = repo.getUrl();
+        try (Connection conn = DriverManager.getConnection(url);
+                Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE TABLE tasks (id INTEGER PRIMARY KEY)");
+        }
+
+        try {
+            repo.throwIfDbDoesNotExist();
+            fail("Should have thrown SQLException for partially initialized database");
+        } catch (SQLException e) {
+            assertEquals("Database is not initialized", e.getMessage());
         }
     }
 
@@ -187,19 +223,15 @@ public class DatabaseRepositoryTest {
         try (Connection conn = DriverManager.getConnection(url)) {
             Statement stmt = conn.createStatement();
 
-            // Récupérer toutes les tables créées par l'application (exclut les tables
-            // système SQLite)
             ResultSet rsAllAppTables = stmt.executeQuery(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
 
-            // Vérifier qu'on a exactement les tables attendues
             assertTrue("Should have 'projects' table", rsAllAppTables.next());
             assertEquals("projects", rsAllAppTables.getString("name"));
 
             assertTrue("Should have 'tasks' table", rsAllAppTables.next());
             assertEquals("tasks", rsAllAppTables.getString("name"));
 
-            // Vérifier qu'il n'y a pas d'autres tables
             assertFalse("Should not have more than 2 application tables", rsAllAppTables.next());
         }
     }

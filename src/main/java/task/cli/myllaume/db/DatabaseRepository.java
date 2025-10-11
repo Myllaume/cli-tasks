@@ -38,31 +38,31 @@ public abstract class DatabaseRepository {
   private void createTasksTable(Statement stmt) throws SQLException {
     stmt.execute(
         """
-                    CREATE TABLE IF NOT EXISTS tasks (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        completed INTEGER NOT NULL,
-                        fulltext TEXT NOT NULL,
-                        priority INTEGER NOT NULL,
-                        created_at INTEGER NOT NULL,
-                        due_at INTEGER NULL,
-                        done_at INTEGER NULL,
-                        parent_id INTEGER NULL,
-                        CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
-                    )
-                """);
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            completed INTEGER NOT NULL,
+            fulltext TEXT NOT NULL,
+            priority INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            due_at INTEGER NULL,
+            done_at INTEGER NULL,
+            parent_id INTEGER NULL,
+            CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+        )
+        """);
   }
 
   private void createProjectsTable(Statement stmt) throws SQLException {
     stmt.execute(
         """
-                    CREATE TABLE IF NOT EXISTS projects (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL UNIQUE,
-                        fulltext TEXT NOT NULL,
-                        created_at INTEGER NOT NULL
-                    )
-                """);
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            fulltext TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )
+        """);
   }
 
   public String getUrl() {

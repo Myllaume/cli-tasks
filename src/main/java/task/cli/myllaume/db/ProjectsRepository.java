@@ -19,9 +19,9 @@ public class ProjectsRepository extends DatabaseRepository {
   public ProjectDb createProject(ProjectData data) throws Exception {
     String sql =
         """
-                INSERT INTO projects (name, fulltext, created_at)
-                VALUES (?, ?, ?)
-                """;
+        INSERT INTO projects (name, fulltext, created_at)
+        VALUES (?, ?, ?)
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -119,11 +119,11 @@ public class ProjectsRepository extends DatabaseRepository {
   public ArrayList<ProjectDb> searchProjects(String keyword, int limit) throws Exception {
     String sql =
         """
-                SELECT id, name, fulltext, created_at
-                FROM projects
-                WHERE fulltext LIKE ?
-                ORDER BY name ASC LIMIT ?
-                """;
+        SELECT id, name, fulltext, created_at
+        FROM projects
+        WHERE fulltext LIKE ?
+        ORDER BY name ASC LIMIT ?
+        """;
     return searchProjectsProcess(keyword, limit, sql);
   }
 

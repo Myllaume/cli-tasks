@@ -23,9 +23,9 @@ public class TaskRepositorySqlite extends DatabaseRepository {
 
     String sql =
         """
-                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """;
+        INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -62,9 +62,9 @@ public class TaskRepositorySqlite extends DatabaseRepository {
   public Task createSubTask(int parentId, TaskData data) throws Exception {
     String sql =
         """
-                INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+        INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -165,16 +165,16 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     String sql =
         String.format(
             """
-                SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks
-                WHERE
-                    parent_id IS NULL AND
-                    completed = 0
-                ORDER BY
-                    (due_at IS NOT NULL AND due_at <= strftime('%%s','now','+%d days')) DESC,
-                    priority DESC,
-                    id ASC
-                LIMIT ?
-                """,
+            SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks
+            WHERE
+                parent_id IS NULL AND
+                completed = 0
+            ORDER BY
+                (due_at IS NOT NULL AND due_at <= strftime('%%s','now','+%d days')) DESC,
+                priority DESC,
+                id ASC
+            LIMIT ?
+            """,
             dueInDays);
 
     try (Connection conn = getConnection();
@@ -199,11 +199,11 @@ public class TaskRepositorySqlite extends DatabaseRepository {
 
     String subTaskSql =
         """
-                SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
-                FROM tasks
-                WHERE parent_id = ?
-                ORDER BY name ASC LIMIT ?
-                """;
+          SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
+          FROM tasks
+          WHERE parent_id = ?
+          ORDER BY name ASC LIMIT ?
+          """;
     try (Connection conn = getConnection();
         PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
 
@@ -231,11 +231,11 @@ public class TaskRepositorySqlite extends DatabaseRepository {
   public Task getLastTask() throws Exception {
     String sql =
         """
-                SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
-                FROM tasks
-                WHERE parent_id IS NULL
-                ORDER BY id DESC LIMIT 1
-                """;
+        SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
+        FROM tasks
+        WHERE parent_id IS NULL
+        ORDER BY id DESC LIMIT 1
+        """;
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -271,33 +271,33 @@ public class TaskRepositorySqlite extends DatabaseRepository {
   public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
     String sql =
         """
-                SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
-                FROM tasks
-                WHERE fulltext LIKE ? AND parent_id IS NULL
-                ORDER BY name ASC LIMIT ?
-                """;
+        SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
+        FROM tasks
+        WHERE fulltext LIKE ? AND parent_id IS NULL
+        ORDER BY name ASC LIMIT ?
+        """;
     return searchTasksProcess(keyword, limit, sql);
   }
 
   public ArrayList<Task> searchTasksTodo(String keyword, int limit) throws Exception {
     String sql =
         """
-                SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
-                FROM tasks
-                WHERE fulltext LIKE ? AND completed = 0 AND parent_id IS NULL
-                ORDER BY name ASC LIMIT ?
-                """;
+        SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
+        FROM tasks
+        WHERE fulltext LIKE ? AND completed = 0 AND parent_id IS NULL
+        ORDER BY name ASC LIMIT ?
+        """;
     return searchTasksProcess(keyword, limit, sql);
   }
 
   public ArrayList<Task> searchTasksDone(String keyword, int limit) throws Exception {
     String sql =
         """
-                SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
-                FROM tasks
-                WHERE fulltext LIKE ? AND completed = 1 AND parent_id IS NULL
-                ORDER BY name ASC LIMIT ?
-                """;
+        SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
+        FROM tasks
+        WHERE fulltext LIKE ? AND completed = 1 AND parent_id IS NULL
+        ORDER BY name ASC LIMIT ?
+        """;
     return searchTasksProcess(keyword, limit, sql);
   }
 
@@ -432,9 +432,9 @@ public class TaskRepositorySqlite extends DatabaseRepository {
 
     String sql =
         """
-                INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """;
+        INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       conn.setAutoCommit(false);

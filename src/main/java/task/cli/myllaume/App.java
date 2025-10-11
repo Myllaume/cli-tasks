@@ -2,6 +2,7 @@ package task.cli.myllaume;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import task.cli.myllaume.config.AppConfigRepository;
 
 @Command(name = "tasks", mixinStandardHelpOptions = true, description = "Gestion des tâches en CLI")
 public class App implements Runnable {

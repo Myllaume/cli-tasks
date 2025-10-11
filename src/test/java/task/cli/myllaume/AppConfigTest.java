@@ -1,6 +1,10 @@
 package task.cli.myllaume;
 
 import org.junit.Test;
+
+import task.cli.myllaume.config.AppConfig;
+import task.cli.myllaume.config.TaskConfig;
+
 import static org.junit.Assert.*;
 
 import java.util.Arrays;

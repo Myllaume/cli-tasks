@@ -1,4 +1,4 @@
-package task.cli.myllaume;
+package task.cli.myllaume.config;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +14,8 @@ import java.io.File;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
+
+// @TODO Add default and init project to config
 
 public class AppConfigRepository {
     public final String filePath;
@@ -82,7 +84,7 @@ public class AppConfigRepository {
         if (new File(filePath).exists()) {
             return;
         }
-        
+
         AppConfig config = new AppConfig("1.0", new ArrayList<TaskConfig>());
         writeFile(config);
     }

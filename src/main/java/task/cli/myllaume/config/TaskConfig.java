@@ -1,4 +1,4 @@
-package task.cli.myllaume;
+package task.cli.myllaume.config;
 
 public class TaskConfig {
     private final String filePath;

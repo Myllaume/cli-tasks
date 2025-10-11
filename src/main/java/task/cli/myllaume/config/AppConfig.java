@@ -1,4 +1,4 @@
-package task.cli.myllaume;
+package task.cli.myllaume.config;
 
 import java.util.List;
 

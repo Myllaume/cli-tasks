@@ -2,7 +2,14 @@
 
 ## To Do
 
-- Dans le catch du read(), tu pourrais ajouter une erreur à la liste errors pour signaler les problèmes d’accès au fichier (ex : fichier introuvable).
+- Ajouter à la configuration du logiciel
+  - Format de date préféré
+  - Fuseau horaire
+  - Langue/locale
+  - Couleurs pour les priorités
+  - Nombre maximum de tâches à afficher par défaut
+  - Priorité par défaut pour les nouvelles tâches
+
 
 ## Changelog
 

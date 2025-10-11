@@ -18,7 +18,7 @@ public abstract class DatabaseRepository {
             normalizedPath += System.getProperty("file.separator");
         }
 
-        this.url = "jdbc:sqlite:" + normalizedPath + "tasks.db";
+        this.url = "jdbc:sqlite:" + normalizedPath + "tasks.db?foreign_keys=on";
     }
 
     protected Connection getConnection() throws SQLException {

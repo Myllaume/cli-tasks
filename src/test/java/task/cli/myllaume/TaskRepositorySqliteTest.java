@@ -527,32 +527,37 @@ public class TaskRepositorySqliteTest {
         assertEquals(lowTask.getId(), tasks.get(6).getId());
     }
 
-    /**
-     * 
-     * @Test
-     *       public void testDeleteTaskDeleteSubTasks() throws Exception {
-     *       Path tempDir = Files.createTempDirectory("tests");
-     *       tempDir.toFile().deleteOnExit();
-     * 
-     *       TaskRepositorySqlite repo = new
-     *       TaskRepositorySqlite(tempDir.toString());
-     *       repo.initTables();
-     * 
-     *       Task parentTask = repo.createTask("Parent Task", false,
-     *       TaskPriority.MEDIUM, null);
-     *       assertNotNull(parentTask);
-     * 
-     *       Task subTask = repo.createSubTask(parentTask.getId(), "Sub Task",
-     *       false, TaskPriority.LOW);
-     *       assertNotNull(subTask);
-     * 
-     *       Task deletedTask = repo.removeTask(parentTask.getId());
-     *       assertNotNull(deletedTask);
-     * 
-     *       Task subTaskFromDb = repo.getTask(subTask.getId());
-     *       assertNull(subTaskFromDb);
-     *       }
-     * 
-     */
+    @Test
+    public void testDeleteTaskDeleteSubTasks() throws Exception {
+        Path tempDir = Files.createTempDirectory("tests");
+        tempDir.toFile().deleteOnExit();
+
+        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+        repo.initTables();
+
+        Instant now = Instant.now();
+
+        Task parentTask = repo.createTask(Task.of("Parent Task", false,
+                TaskPriority.MEDIUM, now, null, null));
+        assertNotNull(parentTask);
+
+        Task subTask1 = repo.createSubTask(parentTask.getId(), Task.of("Sub Task 1", false,
+                TaskPriority.MEDIUM, now, null, null));
+
+        Task subTask2 = repo.createSubTask(parentTask.getId(), Task.of("Sub Task 2", false,
+                TaskPriority.LOW, now, null, null));
+
+        assertNotNull(repo.getTask(subTask1.getId()));
+        assertNotNull(repo.getTask(subTask2.getId()));
+
+        Task deletedTask = repo.removeTask(parentTask.getId());
+        assertNotNull(deletedTask);
+
+        Task subTask1FromDb = repo.getTask(subTask1.getId());
+        assertNull("Sub task 1 should be deleted by CASCADE", subTask1FromDb);
+
+        Task subTask2FromDb = repo.getTask(subTask2.getId());
+        assertNull("Sub task 2 should be deleted by CASCADE", subTask2FromDb);
+    }
 
 }

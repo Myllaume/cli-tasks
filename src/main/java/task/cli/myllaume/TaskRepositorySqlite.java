@@ -60,11 +60,6 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     }
 
     public Task createSubTask(int parentId, TaskData data) throws Exception {
-        Task parentTask = getTask(parentId);
-        if (parentTask == null) {
-            throw new UnknownTaskException(parentId);
-        }
-
         String sql = """
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -89,7 +84,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
                 pstmt.setNull(6, java.sql.Types.INTEGER);
             }
             pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
-            pstmt.setInt(8, parentTask.getId());
+            pstmt.setInt(8, parentId);
             pstmt.executeUpdate();
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
@@ -100,6 +95,12 @@ public class TaskRepositorySqlite extends DatabaseRepository {
                     throw new SQLException("Impossible de récupérer l'ID généré.");
                 }
             }
+        } catch (SQLException e) {
+            // FK constraints to exception
+            if (e.getMessage() != null && e.getMessage().contains("FOREIGN KEY constraint")) {
+                throw new UnknownTaskException(parentId);
+            }
+            throw e;
         }
     }
 

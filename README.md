@@ -65,3 +65,10 @@ cd target
 java -jar java-cli-tasks-1.0-SNAPSHOT.jar --help
 java -jar java-cli-tasks-1.0-SNAPSHOT.jar --version
 ```
+
+### Formater le code
+
+```bash
+mvn spotless:check
+mvn spotless:apply
+```

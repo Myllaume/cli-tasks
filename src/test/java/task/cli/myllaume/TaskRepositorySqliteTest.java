@@ -1,6 +1,5 @@
 package task.cli.myllaume;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -15,549 +14,584 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import org.junit.Test;
 
 public class TaskRepositorySqliteTest {
-    private static final ZoneId timeZone = ZoneId.of("Europe/Paris");
+  private static final ZoneId timeZone = ZoneId.of("Europe/Paris");
 
-    @Test
-    public void testInitCreatesDatabaseFile() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+  @Test
+  public void testInitCreatesDatabaseFile() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
 
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
 
-        repo.initTables();
+    repo.initTables();
 
-        File dbFile = new File(dbPath + System.getProperty("file.separator") + "tasks.db");
-        assertTrue(dbFile.exists());
+    File dbFile = new File(dbPath + System.getProperty("file.separator") + "tasks.db");
+    assertTrue(dbFile.exists());
+  }
 
+  @Test
+  public void testInitCreatesDatabaseTable() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+
+    repo.initTables();
+    String url = repo.getUrl();
+
+    try (Connection conn = DriverManager.getConnection(url)) {
+      Statement stmt = conn.createStatement();
+      ResultSet rs =
+          stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'");
+      assertTrue(rs.next());
+      assertEquals("tasks", rs.getString("name"));
     }
+  }
 
-    @Test
-    public void testInitCreatesDatabaseTable() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+  @Test
+  public void testInitWithNonExistentDirectory() throws Exception {
+    String dbPath = "/tmp/nonexistent/path/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
 
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-
-        repo.initTables();
-        String url = repo.getUrl();
-
-        try (Connection conn = DriverManager.getConnection(url)) {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'");
-            assertTrue(rs.next());
-            assertEquals("tasks", rs.getString("name"));
-        }
-
+    try {
+      repo.initTables();
+      fail("Should have thrown an exception for non-existent directory");
+    } catch (Exception e) {
+      assertNotNull(e);
     }
+  }
 
-    @Test
-    public void testInitWithNonExistentDirectory() throws Exception {
-        String dbPath = "/tmp/nonexistent/path/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-
-        try {
-            repo.initTables();
-            fail("Should have thrown an exception for non-existent directory");
-        } catch (Exception e) {
-            assertNotNull(e);
-        }
+  @Test
+  public void testConstructorWithNullPath() {
+    try {
+      new TaskRepositorySqlite(null);
+      fail("Should have thrown NullPointerException for null path");
+    } catch (NullPointerException e) {
+      assertEquals("Database path cannot be null or empty", e.getMessage());
     }
+  }
 
-    @Test
-    public void testConstructorWithNullPath() {
-        try {
-            new TaskRepositorySqlite(null);
-            fail("Should have thrown NullPointerException for null path");
-        } catch (NullPointerException e) {
-            assertEquals("Database path cannot be null or empty", e.getMessage());
-        }
+  @Test
+  public void testConstructorWithEmptyPath() {
+    try {
+      new TaskRepositorySqlite("   ");
+      fail("Should have thrown IllegalArgumentException for empty path");
+    } catch (IllegalArgumentException e) {
+      assertEquals("Database path cannot be null or empty", e.getMessage());
     }
+  }
 
-    @Test
-    public void testConstructorWithEmptyPath() {
-        try {
-            new TaskRepositorySqlite("   ");
-            fail("Should have thrown IllegalArgumentException for empty path");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Database path cannot be null or empty", e.getMessage());
-        }
+  @Test
+  public void testConstructorNormalizesPath() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPathWithoutSlash = tempDir.toString();
+    String dbPathWithSlash = tempDir.toString() + "/";
+
+    TaskRepositorySqlite repo1 = new TaskRepositorySqlite(dbPathWithoutSlash);
+    TaskRepositorySqlite repo2 = new TaskRepositorySqlite(dbPathWithSlash);
+
+    assertEquals(repo1.getUrl(), repo2.getUrl());
+    assertTrue(repo1.getUrl().endsWith("tasks.db"));
+  }
+
+  @Test
+  public void testCreateTaskSuccess() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
+    Instant dueDate = localDateTime.atZone(timeZone).toInstant();
+
+    Task task =
+        repo.createTask(
+            TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), dueDate, null));
+
+    assertNotNull(task);
+    assertEquals("Test Task", task.getDescription());
+    assertFalse(task.getCompleted());
+    assertEquals(TaskPriority.LOW, task.getPriority());
+    assertTrue(task.getId() > 0);
+    assertEquals(dueDate, task.getDueDate());
+  }
+
+  @Test
+  public void testCreateTaskWithNullName() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    try {
+      Instant now = Instant.now();
+      TaskData nullTaskData = TaskData.of(null, false, TaskPriority.LOW, now, null, null);
+      repo.createTask(nullTaskData);
+      fail("Should have thrown NullPointerException for null name");
+    } catch (NullPointerException e) {
+      assertEquals("Description cannot be null or empty", e.getMessage());
     }
+  }
 
-    @Test
-    public void testConstructorNormalizesPath() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+  @Test
+  public void testCreateTaskWithEmptyName() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
 
-        String dbPathWithoutSlash = tempDir.toString();
-        String dbPathWithSlash = tempDir.toString() + "/";
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
 
-        TaskRepositorySqlite repo1 = new TaskRepositorySqlite(dbPathWithoutSlash);
-        TaskRepositorySqlite repo2 = new TaskRepositorySqlite(dbPathWithSlash);
-
-        assertEquals(repo1.getUrl(), repo2.getUrl());
-        assertTrue(repo1.getUrl().endsWith("tasks.db"));
+    try {
+      repo.createTask(TaskData.of("   ", false, TaskPriority.LOW, Instant.now(), null, null));
+      fail("Should have thrown IllegalArgumentException for empty name");
+    } catch (IllegalArgumentException e) {
+      assertEquals("Description cannot be null or empty", e.getMessage());
     }
+  }
 
-    @Test
-    public void testCreateTaskSuccess() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+  @Test
+  public void testRemoveTaskSuccess() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
 
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
-        Instant dueDate = localDateTime.atZone(timeZone).toInstant();
+    Task addedTask =
+        repo.createTask(
+            TaskData.of("Task to Remove", false, TaskPriority.LOW, Instant.now(), null, null));
+    assertNotNull(addedTask);
+    int taskId = addedTask.getId();
 
-        Task task = repo.createTask(TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), dueDate, null));
+    Task removedTask = repo.removeTask(taskId);
 
-        assertNotNull(task);
-        assertEquals("Test Task", task.getDescription());
-        assertFalse(task.getCompleted());
-        assertEquals(TaskPriority.LOW, task.getPriority());
-        assertTrue(task.getId() > 0);
-        assertEquals(dueDate, task.getDueDate());
+    assertEquals(addedTask.getId(), removedTask.getId());
+    assertEquals(addedTask.getDescription(), removedTask.getDescription());
+    assertEquals(addedTask.getCompleted(), removedTask.getCompleted());
+    assertEquals(addedTask.getFulltext(), removedTask.getFulltext());
+    assertEquals(addedTask.getPriority(), removedTask.getPriority());
+    assertNull(repo.getTask(taskId));
+  }
+
+  @Test
+  public void testRemoveNonExistentTask() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    try {
+      repo.removeTask(999); // ID qui n'existe pas
+      fail("Should have thrown IllegalArgumentException for non-existent task");
+    } catch (IllegalArgumentException e) {
+      assertEquals("Aucune tâche trouvée avec l'ID: 999", e.getMessage());
     }
+  }
 
-    @Test
-    public void testCreateTaskWithNullName() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+  @Test
+  public void testGetTasksSuccess() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
 
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
 
-        try {
-            Instant now = Instant.now();
-            TaskData nullTaskData = TaskData.of(null, false, TaskPriority.LOW, now, null, null);
-            repo.createTask(nullTaskData);
-            fail("Should have thrown NullPointerException for null name");
-        } catch (NullPointerException e) {
-            assertEquals("Description cannot be null or empty", e.getMessage());
-        }
+    Task task =
+        repo.createTask(TaskData.of("Task1", false, TaskPriority.LOW, Instant.now(), null, null));
+    repo.createTask(TaskData.of("Task2", false, TaskPriority.MEDIUM, Instant.now(), null, null));
+    repo.createTask(TaskData.of("Task3", false, TaskPriority.LOW, Instant.now(), null, null));
+    repo.createTask(TaskData.of("Task4", false, TaskPriority.HIGH, Instant.now(), null, null));
+
+    ArrayList<Task> tasks = repo.getTasks(3);
+
+    assertNotNull(tasks);
+    assertEquals(3, tasks.size());
+    assertEquals(task.getId(), tasks.get(0).getId());
+    assertEquals(task.getDescription(), tasks.get(0).getDescription());
+    assertEquals(task.getCompleted(), tasks.get(0).getCompleted());
+    assertEquals(task.getFulltext(), tasks.get(0).getFulltext());
+    assertEquals(task.getPriority(), tasks.get(0).getPriority());
+    assertEquals("Task2", tasks.get(1).getDescription());
+    assertEquals("Task3", tasks.get(2).getDescription());
+  }
+
+  @Test
+  public void testCountImportFromCsv() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    repo.importFromCsv("src/test/resources/many.csv");
+    int count = repo.countTasks();
+    assertEquals(52, count);
+  }
+
+  @Test
+  public void testCsvImportExport() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+    File importedFile = new File("src/test/resources/many.csv");
+    File exportedFile = new File(tempDir.toString() + "/many_exported.csv");
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    repo.importFromCsv(importedFile.getAbsolutePath());
+    repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
+
+    assertTrue("Exported file should exist", exportedFile.exists());
+
+    // Read and compare the files
+    String originalContent = Files.readString(Path.of("src/test/resources/many.csv"));
+    String exportedContent = Files.readString(exportedFile.toPath());
+
+    assertEquals(
+        "Exported CSV should match original CSV",
+        originalContent.length(),
+        exportedContent.length());
+  }
+
+  @Test
+  public void testSearchTasks() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    repo.importFromCsv("src/test/resources/many.csv");
+    ArrayList<Task> tasks = repo.searchTasks("test", 5);
+
+    assertEquals(5, tasks.size());
+  }
+
+  @Test
+  public void testSearchTasksDone() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    repo.importFromCsv("src/test/resources/many.csv");
+    ArrayList<Task> tasks = repo.searchTasksDone("test", 100);
+
+    assertEquals(8, tasks.size());
+  }
+
+  @Test
+  public void testSearchTasksTodo() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    repo.importFromCsv("src/test/resources/many.csv");
+    ArrayList<Task> tasks = repo.searchTasksTodo("test", 100);
+
+    assertEquals(1, tasks.size());
+  }
+
+  @Test
+  public void testGetTaskSuccess() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    Task addedTask =
+        repo.createTask(
+            TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), null, null));
+    assertNotNull(addedTask);
+    int taskId = addedTask.getId();
+
+    Task task = repo.getTask(taskId);
+
+    assertEquals(taskId, task.getId());
+    assertEquals("Test Task", task.getDescription());
+    assertFalse(task.getCompleted());
+  }
+
+  @Test
+  public void testGetNonExistentTask() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString() + "/";
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    assertNull(repo.getTask(999));
+  }
+
+  @Test
+  public void testUpdateTaskName() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Task originalTask =
+        repo.createTask(
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+
+    Task updatedTask = repo.updateTaskName(originalTask.getId(), "Updated Task");
+
+    assertEquals("Updated Task", updatedTask.getDescription());
+    assertEquals("updatedtask", updatedTask.getFulltext());
+  }
+
+  @Test
+  public void testUpdateTaskDone() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Task originalTask =
+        repo.createTask(
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+    assertNull(originalTask.getDoneAt());
+
+    Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), true);
+
+    assertEquals(true, updatedTask.getCompleted());
+    assertNotNull(updatedTask.getDoneAt());
+  }
+
+  @Test
+  public void testUpdateTaskTodo() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Task originalTask =
+        repo.createTask(
+            TaskData.of("Original Task", true, TaskPriority.LOW, Instant.now(), null, null));
+    assertNotNull(originalTask.getDoneAt());
+
+    Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), false);
+
+    assertEquals(false, updatedTask.getCompleted());
+    assertNull(updatedTask.getDoneAt());
+  }
+
+  @Test
+  public void testUpdateTaskPriority() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Task originalTask =
+        repo.createTask(
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+
+    Task updatedTask = repo.updateTaskPriority(originalTask.getId(), TaskPriority.HIGH);
+
+    assertEquals(TaskPriority.HIGH, updatedTask.getPriority());
+  }
+
+  @Test
+  public void testUpdateTaskDueDate() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Task originalTask =
+        repo.createTask(
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+
+    Instant tomorrow = LocalDateTime.now().plusDays(1).atZone(timeZone).toInstant();
+    Task updatedTask = repo.updateTaskDueDate(originalTask.getId(), tomorrow);
+
+    // Transform milliseconds to seconds because the database only stores seconds
+    Instant expectedDueDate = Instant.ofEpochSecond(tomorrow.getEpochSecond());
+    assertEquals(expectedDueDate, updatedTask.getDueDate());
+  }
+
+  @Test
+  public void testAddSubTask() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Task parentTask =
+        repo.createTask(
+            TaskData.of("Parent Task", false, TaskPriority.MEDIUM, Instant.now(), null, null));
+    assertNotNull(parentTask);
+
+    Instant tomorrow = LocalDateTime.now().plusDays(1).atZone(timeZone).toInstant();
+
+    Task subTask =
+        repo.createSubTask(
+            parentTask.getId(),
+            TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), tomorrow, null));
+    repo.createSubTask(
+        parentTask.getId(),
+        TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
+    repo.createSubTask(
+        parentTask.getId(),
+        TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
+
+    Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId(), 2);
+    assertNotNull(taskFromDb);
+    assertEquals(2, taskFromDb.getSubTasks().size());
+
+    Task subTaskFromDb = taskFromDb.getSubTasks().get(0);
+
+    assertEquals(subTask.getId(), subTaskFromDb.getId());
+    assertEquals(subTask.getDescription(), subTaskFromDb.getDescription());
+    assertEquals(subTask.getCompleted(), subTaskFromDb.getCompleted());
+    assertEquals(subTask.getFulltext(), subTaskFromDb.getFulltext());
+    assertEquals(subTask.getPriority(), subTaskFromDb.getPriority());
+    assertEquals(subTask.getCreatedAt(), subTaskFromDb.getCreatedAt());
+    assertEquals(subTask.getDueDate(), subTaskFromDb.getDueDate());
+  }
+
+  @Test
+  public void testFailAddSubTask() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    try {
+      repo.createSubTask(
+          0, TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
+      fail("Should throw for unknown parent task");
+    } catch (UnknownTaskException e) {
+      assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
     }
-
-    @Test
-    public void testCreateTaskWithEmptyName() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        try {
-            repo.createTask(TaskData.of("   ", false, TaskPriority.LOW, Instant.now(), null, null));
-            fail("Should have thrown IllegalArgumentException for empty name");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Description cannot be null or empty", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testRemoveTaskSuccess() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        Task addedTask = repo.createTask(TaskData.of("Task to Remove", false, TaskPriority.LOW, Instant.now(), null, null));
-        assertNotNull(addedTask);
-        int taskId = addedTask.getId();
-
-        Task removedTask = repo.removeTask(taskId);
-
-        assertEquals(addedTask.getId(), removedTask.getId());
-        assertEquals(addedTask.getDescription(), removedTask.getDescription());
-        assertEquals(addedTask.getCompleted(), removedTask.getCompleted());
-        assertEquals(addedTask.getFulltext(), removedTask.getFulltext());
-        assertEquals(addedTask.getPriority(), removedTask.getPriority());
-        assertNull(repo.getTask(taskId));
-    }
-
-    @Test
-    public void testRemoveNonExistentTask() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        try {
-            repo.removeTask(999); // ID qui n'existe pas
-            fail("Should have thrown IllegalArgumentException for non-existent task");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Aucune tâche trouvée avec l'ID: 999", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testGetTasksSuccess() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        Task task = repo.createTask(TaskData.of("Task1", false, TaskPriority.LOW, Instant.now(), null, null));
-        repo.createTask(TaskData.of("Task2", false, TaskPriority.MEDIUM, Instant.now(), null, null));
-        repo.createTask(TaskData.of("Task3", false, TaskPriority.LOW, Instant.now(), null, null));
-        repo.createTask(TaskData.of("Task4", false, TaskPriority.HIGH, Instant.now(), null, null));
-
-        ArrayList<Task> tasks = repo.getTasks(3);
-
-        assertNotNull(tasks);
-        assertEquals(3, tasks.size());
-        assertEquals(task.getId(), tasks.get(0).getId());
-        assertEquals(task.getDescription(), tasks.get(0).getDescription());
-        assertEquals(task.getCompleted(), tasks.get(0).getCompleted());
-        assertEquals(task.getFulltext(), tasks.get(0).getFulltext());
-        assertEquals(task.getPriority(), tasks.get(0).getPriority());
-        assertEquals("Task2", tasks.get(1).getDescription());
-        assertEquals("Task3", tasks.get(2).getDescription());
-    }
-
-    @Test
-    public void testCountImportFromCsv() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        repo.importFromCsv("src/test/resources/many.csv");
-        int count = repo.countTasks();
-        assertEquals(52, count);
-    }
-
-    @Test
-    public void testCsvImportExport() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-        File importedFile = new File("src/test/resources/many.csv");
-        File exportedFile = new File(tempDir.toString() + "/many_exported.csv");
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        repo.importFromCsv(importedFile.getAbsolutePath());
-        repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
-
-        assertTrue("Exported file should exist", exportedFile.exists());
-
-        // Read and compare the files
-        String originalContent = Files.readString(Path.of("src/test/resources/many.csv"));
-        String exportedContent = Files.readString(exportedFile.toPath());
-
-        assertEquals("Exported CSV should match original CSV", originalContent.length(), exportedContent.length());
-    }
-
-    @Test
-    public void testSearchTasks() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        repo.importFromCsv("src/test/resources/many.csv");
-        ArrayList<Task> tasks = repo.searchTasks("test", 5);
-
-        assertEquals(5, tasks.size());
-    }
-
-    @Test
-    public void testSearchTasksDone() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        repo.importFromCsv("src/test/resources/many.csv");
-        ArrayList<Task> tasks = repo.searchTasksDone("test", 100);
-
-        assertEquals(8, tasks.size());
-    }
-
-    @Test
-    public void testSearchTasksTodo() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        repo.importFromCsv("src/test/resources/many.csv");
-        ArrayList<Task> tasks = repo.searchTasksTodo("test", 100);
-
-        assertEquals(1, tasks.size());
-    }
-
-    @Test
-    public void testGetTaskSuccess() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        Task addedTask = repo.createTask(TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), null, null));
-        assertNotNull(addedTask);
-        int taskId = addedTask.getId();
-
-        Task task = repo.getTask(taskId);
-
-        assertEquals(taskId, task.getId());
-        assertEquals("Test Task", task.getDescription());
-        assertFalse(task.getCompleted());
-    }
-
-    @Test
-    public void testGetNonExistentTask() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        String dbPath = tempDir.toString() + "/";
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
-
-        assertNull(repo.getTask(999));
-    }
-
-    @Test
-    public void testUpdateTaskName() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
-
-        Task updatedTask = repo.updateTaskName(originalTask.getId(), "Updated Task");
-
-        assertEquals("Updated Task", updatedTask.getDescription());
-        assertEquals("updatedtask", updatedTask.getFulltext());
-    }
-
-    @Test
-    public void testUpdateTaskDone() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
-        assertNull(originalTask.getDoneAt());
-
-        Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), true);
-
-        assertEquals(true, updatedTask.getCompleted());
-        assertNotNull(updatedTask.getDoneAt());
-    }
-
-    @Test
-    public void testUpdateTaskTodo() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Task originalTask = repo.createTask(TaskData.of("Original Task", true, TaskPriority.LOW, Instant.now(), null, null));
-        assertNotNull(originalTask.getDoneAt());
-
-        Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), false);
-
-        assertEquals(false, updatedTask.getCompleted());
-        assertNull(updatedTask.getDoneAt());
-    }
-
-    @Test
-    public void testUpdateTaskPriority() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
-
-        Task updatedTask = repo.updateTaskPriority(originalTask.getId(), TaskPriority.HIGH);
-
-        assertEquals(TaskPriority.HIGH, updatedTask.getPriority());
-    }
-
-    @Test
-    public void testUpdateTaskDueDate() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Task originalTask = repo.createTask(TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
-
-        Instant tomorrow = LocalDateTime.now().plusDays(1)
-                .atZone(timeZone)
-                .toInstant();
-        Task updatedTask = repo.updateTaskDueDate(originalTask.getId(), tomorrow);
-
-        // Transform milliseconds to seconds because the database only stores seconds
-        Instant expectedDueDate = Instant.ofEpochSecond(tomorrow.getEpochSecond());
-        assertEquals(expectedDueDate, updatedTask.getDueDate());
-    }
-
-    @Test
-    public void testAddSubTask() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Task parentTask = repo.createTask(TaskData.of("Parent Task", false, TaskPriority.MEDIUM, Instant.now(), null, null));
-        assertNotNull(parentTask);
-
-        Instant tomorrow = LocalDateTime.now().plusDays(1)
-                .atZone(timeZone)
-                .toInstant();
-
-        Task subTask = repo.createSubTask(parentTask.getId(), TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), tomorrow, null));
-        repo.createSubTask(parentTask.getId(), TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
-        repo.createSubTask(parentTask.getId(), TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
-
-        Task taskFromDb = repo.getTaskWithSubTasks(parentTask.getId(), 2);
-        assertNotNull(taskFromDb);
-        assertEquals(2, taskFromDb.getSubTasks().size());
-
-        Task subTaskFromDb = taskFromDb.getSubTasks().get(0);
-
-        assertEquals(subTask.getId(), subTaskFromDb.getId());
-        assertEquals(subTask.getDescription(), subTaskFromDb.getDescription());
-        assertEquals(subTask.getCompleted(), subTaskFromDb.getCompleted());
-        assertEquals(subTask.getFulltext(), subTaskFromDb.getFulltext());
-        assertEquals(subTask.getPriority(), subTaskFromDb.getPriority());
-        assertEquals(subTask.getCreatedAt(), subTaskFromDb.getCreatedAt());
-        assertEquals(subTask.getDueDate(), subTaskFromDb.getDueDate());
-    }
-
-    @Test
-    public void testFailAddSubTask() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        try {
-            repo.createSubTask(0, TaskData.of("Sub Task", false, TaskPriority.LOW, Instant.now(), null, null));
-            fail("Should throw for unknown parent task");
-        } catch (UnknownTaskException e) {
-            assertEquals("Aucune tâche trouvée avec l'ID: 0", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testGetTasksOrderByPriority() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Instant now = Instant.now();
-
-        Task highTask = repo.createTask(TaskData.of("High Priority Task", false, TaskPriority.HIGH, now, null, null));
-        Task lowTask = repo.createTask(TaskData.of("Low Priority Task", false, TaskPriority.LOW, now, null, null));
-        Task mediumTask = repo.createTask(TaskData.of("Medium Priority Task", false, TaskPriority.MEDIUM, now, null, null));
-
-        Instant tomorrow = LocalDateTime.now().plusDays(1)
-                .atZone(timeZone)
-                .toInstant();
-        Instant nextDay = LocalDateTime.now().plusDays(2)
-                .atZone(timeZone)
-                .toInstant();
-        Instant nextWeek = LocalDateTime.now().plusDays(7)
-                .atZone(timeZone)
-                .toInstant();
-
-        Task tomorrowTask = repo.createTask(TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
-        Task tomorrowTaskNewer = repo.createTask(TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
-        Task nextDayTask = repo.createTask(TaskData.of("Next Day Task", false, TaskPriority.MEDIUM, now, nextDay, null));
-        Task nextWeekTask = repo.createTask(TaskData.of("Next week Task", false, TaskPriority.MEDIUM, now, nextWeek, null));
-        // Not in result because is done
-        repo.createTask(TaskData.of("Done Task", true, TaskPriority.MEDIUM, now, null, null));
-        // Not in result because is subtask
-        repo.createSubTask(tomorrowTask.getId(), TaskData.of("Sub Task", false, TaskPriority.MEDIUM, now, null, null));
-        // Not in result because of the limit
-        repo.createTask(TaskData.of("Next week Task", false, TaskPriority.LOW, now, null, null));
-
-        ArrayList<Task> tasks = repo.getTasksOrderByPriority(3, 7);
-
-        assertEquals(7, tasks.size());
-        // first because due date is the soonest
-        assertEquals(tomorrowTask.getId(), tasks.get(0).getId());
-        // second because due date is the same as first, but was added after
-        assertEquals(tomorrowTaskNewer.getId(), tasks.get(1).getId());
-        // third because due date is the next soonest
-        assertEquals(nextDayTask.getId(), tasks.get(2).getId());
-        // then the high priority task without due date or +3 days due date
-        assertEquals(highTask.getId(), tasks.get(3).getId());
-        assertEquals(mediumTask.getId(), tasks.get(4).getId());
-        assertEquals(nextWeekTask.getId(), tasks.get(5).getId());
-        assertEquals(lowTask.getId(), tasks.get(6).getId());
-    }
-
-    @Test
-    public void testDeleteTaskDeleteSubTasks() throws Exception {
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
-
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-        repo.initTables();
-
-        Instant now = Instant.now();
-
-        Task parentTask = repo.createTask(Task.of("Parent Task", false,
-                TaskPriority.MEDIUM, now, null, null));
-        assertNotNull(parentTask);
-
-        Task subTask1 = repo.createSubTask(parentTask.getId(), Task.of("Sub Task 1", false,
-                TaskPriority.MEDIUM, now, null, null));
-
-        Task subTask2 = repo.createSubTask(parentTask.getId(), Task.of("Sub Task 2", false,
-                TaskPriority.LOW, now, null, null));
-
-        assertNotNull(repo.getTask(subTask1.getId()));
-        assertNotNull(repo.getTask(subTask2.getId()));
-
-        Task deletedTask = repo.removeTask(parentTask.getId());
-        assertNotNull(deletedTask);
-
-        Task subTask1FromDb = repo.getTask(subTask1.getId());
-        assertNull("Sub task 1 should be deleted by CASCADE", subTask1FromDb);
-
-        Task subTask2FromDb = repo.getTask(subTask2.getId());
-        assertNull("Sub task 2 should be deleted by CASCADE", subTask2FromDb);
-    }
-
+  }
+
+  @Test
+  public void testGetTasksOrderByPriority() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Instant now = Instant.now();
+
+    Task highTask =
+        repo.createTask(
+            TaskData.of("High Priority Task", false, TaskPriority.HIGH, now, null, null));
+    Task lowTask =
+        repo.createTask(TaskData.of("Low Priority Task", false, TaskPriority.LOW, now, null, null));
+    Task mediumTask =
+        repo.createTask(
+            TaskData.of("Medium Priority Task", false, TaskPriority.MEDIUM, now, null, null));
+
+    Instant tomorrow = LocalDateTime.now().plusDays(1).atZone(timeZone).toInstant();
+    Instant nextDay = LocalDateTime.now().plusDays(2).atZone(timeZone).toInstant();
+    Instant nextWeek = LocalDateTime.now().plusDays(7).atZone(timeZone).toInstant();
+
+    Task tomorrowTask =
+        repo.createTask(
+            TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
+    Task tomorrowTaskNewer =
+        repo.createTask(
+            TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
+    Task nextDayTask =
+        repo.createTask(
+            TaskData.of("Next Day Task", false, TaskPriority.MEDIUM, now, nextDay, null));
+    Task nextWeekTask =
+        repo.createTask(
+            TaskData.of("Next week Task", false, TaskPriority.MEDIUM, now, nextWeek, null));
+    // Not in result because is done
+    repo.createTask(TaskData.of("Done Task", true, TaskPriority.MEDIUM, now, null, null));
+    // Not in result because is subtask
+    repo.createSubTask(
+        tomorrowTask.getId(), TaskData.of("Sub Task", false, TaskPriority.MEDIUM, now, null, null));
+    // Not in result because of the limit
+    repo.createTask(TaskData.of("Next week Task", false, TaskPriority.LOW, now, null, null));
+
+    ArrayList<Task> tasks = repo.getTasksOrderByPriority(3, 7);
+
+    assertEquals(7, tasks.size());
+    // first because due date is the soonest
+    assertEquals(tomorrowTask.getId(), tasks.get(0).getId());
+    // second because due date is the same as first, but was added after
+    assertEquals(tomorrowTaskNewer.getId(), tasks.get(1).getId());
+    // third because due date is the next soonest
+    assertEquals(nextDayTask.getId(), tasks.get(2).getId());
+    // then the high priority task without due date or +3 days due date
+    assertEquals(highTask.getId(), tasks.get(3).getId());
+    assertEquals(mediumTask.getId(), tasks.get(4).getId());
+    assertEquals(nextWeekTask.getId(), tasks.get(5).getId());
+    assertEquals(lowTask.getId(), tasks.get(6).getId());
+  }
+
+  @Test
+  public void testDeleteTaskDeleteSubTasks() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    repo.initTables();
+
+    Instant now = Instant.now();
+
+    Task parentTask =
+        repo.createTask(Task.of("Parent Task", false, TaskPriority.MEDIUM, now, null, null));
+    assertNotNull(parentTask);
+
+    Task subTask1 =
+        repo.createSubTask(
+            parentTask.getId(), Task.of("Sub Task 1", false, TaskPriority.MEDIUM, now, null, null));
+
+    Task subTask2 =
+        repo.createSubTask(
+            parentTask.getId(), Task.of("Sub Task 2", false, TaskPriority.LOW, now, null, null));
+
+    assertNotNull(repo.getTask(subTask1.getId()));
+    assertNotNull(repo.getTask(subTask2.getId()));
+
+    Task deletedTask = repo.removeTask(parentTask.getId());
+    assertNotNull(deletedTask);
+
+    Task subTask1FromDb = repo.getTask(subTask1.getId());
+    assertNull("Sub task 1 should be deleted by CASCADE", subTask1FromDb);
+
+    Task subTask2FromDb = repo.getTask(subTask2.getId());
+    assertNull("Sub task 2 should be deleted by CASCADE", subTask2FromDb);
+  }
 }

@@ -1,217 +1,222 @@
 package task.cli.myllaume;
 
-import org.junit.Test;
-
-import picocli.CommandLine;
-
 import static org.junit.Assert.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import org.junit.Test;
+import picocli.CommandLine;
 
 public class CommandSearchTest {
 
-    @Test
-    public void testRunWithMaxResult() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+  @Test
+  public void testRunWithMaxResult() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        File tempDir = Files.createTempDirectory("tests").toFile();
-        tempDir.deleteOnExit();
+    File tempDir = Files.createTempDirectory("tests").toFile();
+    tempDir.deleteOnExit();
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.initTables();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
+    repo.initTables();
 
-        repo.importFromCsv("src/test/resources/many.csv");
+    repo.importFromCsv("src/test/resources/many.csv");
 
-        ArrayList<Task> tasks = repo.getTasks(100);
-        assertEquals(52, tasks.size());
+    ArrayList<Task> tasks = repo.getTasks(100);
+    assertEquals(52, tasks.size());
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
 
-            CommandSearch cmd = new CommandSearch(repo);
-            new CommandLine(cmd).parseArgs("test");
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
-
-        assertEquals("", err.toString());
-        String output = out.toString();
-
-        assertTrue("Doit contenir 'Write integration tests'", output.contains("Write integration tests"));
-        assertTrue("Doit contenir 'Write tests for edge cases'", output.contains("Write tests for edge cases"));
-        assertTrue("Doit contenir 'Write tests for TaskRepository'", output.contains("Write tests for TaskRepository"));
-        assertTrue("Doit contenir le message de fin",
-                output.contains("Recherche terminée. Affichage de 5 résultats sur"));
-
-        // Vérifier qu'il y a exactement 5 lignes de résultats (plus la ligne de fin)
-        String[] lines = output.split("\n");
-        assertEquals("Devrait avoir 6 lignes (5 résultats + message final)", 6, lines.length);
+      CommandSearch cmd = new CommandSearch(repo);
+      new CommandLine(cmd).parseArgs("test");
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
-    @Test
-    public void testRunWithAllResults() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+    assertEquals("", err.toString());
+    String output = out.toString();
 
-        File tempDir = Files.createTempDirectory("tests").toFile();
-        tempDir.deleteOnExit();
+    assertTrue(
+        "Doit contenir 'Write integration tests'", output.contains("Write integration tests"));
+    assertTrue(
+        "Doit contenir 'Write tests for edge cases'",
+        output.contains("Write tests for edge cases"));
+    assertTrue(
+        "Doit contenir 'Write tests for TaskRepository'",
+        output.contains("Write tests for TaskRepository"));
+    assertTrue(
+        "Doit contenir le message de fin",
+        output.contains("Recherche terminée. Affichage de 5 résultats sur"));
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.initTables();
+    // Vérifier qu'il y a exactement 5 lignes de résultats (plus la ligne de fin)
+    String[] lines = output.split("\n");
+    assertEquals("Devrait avoir 6 lignes (5 résultats + message final)", 6, lines.length);
+  }
 
-        repo.importFromCsv("src/test/resources/many.csv");
+  @Test
+  public void testRunWithAllResults() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        ArrayList<Task> tasks = repo.getTasks(100);
-        assertEquals(52, tasks.size());
+    File tempDir = Files.createTempDirectory("tests").toFile();
+    tempDir.deleteOnExit();
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
+    repo.initTables();
 
-            CommandSearch cmd = new CommandSearch(repo);
-            new CommandLine(cmd).parseArgs("cli");
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
+    repo.importFromCsv("src/test/resources/many.csv");
 
-        assertEquals("", err.toString());
-        String output = out.toString();
+    ArrayList<Task> tasks = repo.getTasks(100);
+    assertEquals(52, tasks.size());
 
-        assertTrue("Doit contenir 'CLI'", output.contains("CLI"));
-        assertTrue("Doit contenir le message de fin",
-                output.contains("Recherche terminée. Affichage de 2 résultats sur 2 trouvés."));
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
 
-        String[] lines = output.split("\n");
-        assertEquals("Devrait avoir 3 lignes (2 résultats + message final)", 3, lines.length);
+      CommandSearch cmd = new CommandSearch(repo);
+      new CommandLine(cmd).parseArgs("cli");
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
-    @Test
-    public void testRunMessageForEmptySearch() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+    assertEquals("", err.toString());
+    String output = out.toString();
 
-        File tempDir = Files.createTempDirectory("tests").toFile();
-        tempDir.deleteOnExit();
+    assertTrue("Doit contenir 'CLI'", output.contains("CLI"));
+    assertTrue(
+        "Doit contenir le message de fin",
+        output.contains("Recherche terminée. Affichage de 2 résultats sur 2 trouvés."));
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.initTables();
+    String[] lines = output.split("\n");
+    assertEquals("Devrait avoir 3 lignes (2 résultats + message final)", 3, lines.length);
+  }
 
-        repo.importFromCsv("src/test/resources/many.csv");
+  @Test
+  public void testRunMessageForEmptySearch() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        ArrayList<Task> tasks = repo.getTasks(100);
-        assertEquals(52, tasks.size());
+    File tempDir = Files.createTempDirectory("tests").toFile();
+    tempDir.deleteOnExit();
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
+    repo.initTables();
 
-            CommandSearch cmd = new CommandSearch(repo);
-            cmd.fulltext = "";
-            cmd.maxCount = 5;
-            cmd.maxResults = 3;
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
+    repo.importFromCsv("src/test/resources/many.csv");
 
-        assertEquals("", err.toString());
-        assertEquals("Aucune chaîne de recherche fournie.\n", out.toString());
+    ArrayList<Task> tasks = repo.getTasks(100);
+    assertEquals(52, tasks.size());
+
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
+
+      CommandSearch cmd = new CommandSearch(repo);
+      cmd.fulltext = "";
+      cmd.maxCount = 5;
+      cmd.maxResults = 3;
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
-    @Test
-    public void testRunWithMaxResultCount() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+    assertEquals("", err.toString());
+    assertEquals("Aucune chaîne de recherche fournie.\n", out.toString());
+  }
 
-        File tempDir = Files.createTempDirectory("tests").toFile();
-        tempDir.deleteOnExit();
+  @Test
+  public void testRunWithMaxResultCount() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.initTables();
-        repo.importFromCsv("src/test/resources/many.csv");
+    File tempDir = Files.createTempDirectory("tests").toFile();
+    tempDir.deleteOnExit();
 
-        ArrayList<Task> tasks = repo.getTasks(100);
-        assertEquals(52, tasks.size());
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
+    repo.initTables();
+    repo.importFromCsv("src/test/resources/many.csv");
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    ArrayList<Task> tasks = repo.getTasks(100);
+    assertEquals(52, tasks.size());
 
-            CommandSearch cmd = new CommandSearch(repo);
-            cmd.fulltext = "test";
-            cmd.maxResults = 3;
-            cmd.maxCount = 5;
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
 
-        assertEquals("", err.toString());
-        String output = out.toString();
-
-        assertTrue("Doit contenir 'test'", output.toLowerCase().contains("test"));
-        assertTrue("Doit contenir le message de fin",
-                output.contains("Recherche terminée. Affichage de 3 résultats sur"));
-
-
-        String[] lines = output.split("\n");
-        assertEquals("Devrait avoir 4 lignes (3 résultats + message final)", 4, lines.length);
+      CommandSearch cmd = new CommandSearch(repo);
+      cmd.fulltext = "test";
+      cmd.maxResults = 3;
+      cmd.maxCount = 5;
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
-    @Test
-    public void testRunMessageForMaxCountGreaterThanResults() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+    assertEquals("", err.toString());
+    String output = out.toString();
 
-        File tempDir = Files.createTempDirectory("tests").toFile();
-        tempDir.deleteOnExit();
+    assertTrue("Doit contenir 'test'", output.toLowerCase().contains("test"));
+    assertTrue(
+        "Doit contenir le message de fin",
+        output.contains("Recherche terminée. Affichage de 3 résultats sur"));
 
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
-        repo.initTables();
-        repo.importFromCsv("src/test/resources/many.csv");
+    String[] lines = output.split("\n");
+    assertEquals("Devrait avoir 4 lignes (3 résultats + message final)", 4, lines.length);
+  }
 
-        ArrayList<Task> tasks = repo.getTasks(100);
-        assertEquals(52, tasks.size());
+  @Test
+  public void testRunMessageForMaxCountGreaterThanResults() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    File tempDir = Files.createTempDirectory("tests").toFile();
+    tempDir.deleteOnExit();
 
-            CommandSearch cmd = new CommandSearch(repo);
-            cmd.fulltext = "test";
-            cmd.maxResults = 5;
-            cmd.maxCount = 3;
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
+    repo.initTables();
+    repo.importFromCsv("src/test/resources/many.csv");
 
-        assertEquals("", err.toString());
-        assertEquals(
-                "Le nombre maximum de résultats affiché ne peut pas être inférieur au nombre maximum de résultats à analyser.\n",
-                out.toString());
+    ArrayList<Task> tasks = repo.getTasks(100);
+    assertEquals(52, tasks.size());
+
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
+
+      CommandSearch cmd = new CommandSearch(repo);
+      cmd.fulltext = "test";
+      cmd.maxResults = 5;
+      cmd.maxCount = 3;
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
+    assertEquals("", err.toString());
+    assertEquals(
+        "Le nombre maximum de résultats affiché ne peut pas être inférieur au nombre maximum de résultats à analyser.\n",
+        out.toString());
+  }
 }

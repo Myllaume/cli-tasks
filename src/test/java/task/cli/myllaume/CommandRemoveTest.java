@@ -1,93 +1,93 @@
 package task.cli.myllaume;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import org.junit.Test;
 
 public class CommandRemoveTest {
 
-    @Test
-    public void testRun() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+  @Test
+  public void testRun() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
 
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
 
-        Instant now = Instant.now();
-        TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
-        repo.createTask(taskOneData);
-        TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
-        Task task2 = repo.createTask(taskTwoData);
+    Instant now = Instant.now();
+    TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
+    repo.createTask(taskOneData);
+    TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
+    Task task2 = repo.createTask(taskTwoData);
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
 
-            CommandRemove cmd = new CommandRemove(repo);
-            cmd.id = String.valueOf(task2.getId());
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
-
-        assertEquals("", err.toString());
-        assertEquals("La tâche " + task2.getId() + " a été supprimée.\n", out.toString());
-
-        ArrayList<Task> tasks = repo.getTasks(10);
-        assertEquals(1, tasks.size());
-        assertEquals("One", tasks.get(0).getDescription());
+      CommandRemove cmd = new CommandRemove(repo);
+      cmd.id = String.valueOf(task2.getId());
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
-    @Test
-    public void testRunFail() throws Exception {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream oldErr = System.err;
-        PrintStream oldOut = System.out;
+    assertEquals("", err.toString());
+    assertEquals("La tâche " + task2.getId() + " a été supprimée.\n", out.toString());
 
-        Path tempDir = Files.createTempDirectory("tests");
-        tempDir.toFile().deleteOnExit();
+    ArrayList<Task> tasks = repo.getTasks(10);
+    assertEquals(1, tasks.size());
+    assertEquals("One", tasks.get(0).getDescription());
+  }
 
-        String dbPath = tempDir.toString();
-        TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-        repo.initTables();
+  @Test
+  public void testRunFail() throws Exception {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream oldErr = System.err;
+    PrintStream oldOut = System.out;
 
-        Instant now = Instant.now();
-        TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
-        repo.createTask(taskOneData);
-        TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
-        repo.createTask(taskTwoData);
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
 
-        try {
-            System.setErr(new PrintStream(err));
-            System.setOut(new PrintStream(out));
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
 
-            CommandRemove cmd = new CommandRemove(repo);
-            cmd.id = "100"; // does not exist
-            cmd.run();
-        } finally {
-            System.setErr(oldErr);
-            System.setOut(oldOut);
-        }
+    Instant now = Instant.now();
+    TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
+    repo.createTask(taskOneData);
+    TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
+    repo.createTask(taskTwoData);
 
-        assertEquals("", err.toString());
-        assertEquals("Erreur lors de la suppression de la tâche 100.\n", out.toString());
+    try {
+      System.setErr(new PrintStream(err));
+      System.setOut(new PrintStream(out));
 
-        ArrayList<Task> tasks = repo.getTasks(10);
-        assertEquals(2, tasks.size());
+      CommandRemove cmd = new CommandRemove(repo);
+      cmd.id = "100"; // does not exist
+      cmd.run();
+    } finally {
+      System.setErr(oldErr);
+      System.setOut(oldOut);
     }
 
+    assertEquals("", err.toString());
+    assertEquals("Erreur lors de la suppression de la tâche 100.\n", out.toString());
+
+    ArrayList<Task> tasks = repo.getTasks(10);
+    assertEquals(2, tasks.size());
+  }
 }

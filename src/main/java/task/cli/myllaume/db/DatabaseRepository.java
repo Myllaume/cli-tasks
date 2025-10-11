@@ -4,40 +4,40 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import task.cli.myllaume.utils.Validators;
 
 public abstract class DatabaseRepository {
-    protected final String url;
+  protected final String url;
 
-    public DatabaseRepository(String dbPath) {
-        Validators.throwNullOrEmptyString(dbPath, "Database path cannot be null or empty");
+  public DatabaseRepository(String dbPath) {
+    Validators.throwNullOrEmptyString(dbPath, "Database path cannot be null or empty");
 
-        String normalizedPath = dbPath.trim();
-        if (!normalizedPath.endsWith(System.getProperty("file.separator"))) {
-            normalizedPath += System.getProperty("file.separator");
-        }
-
-        this.url = "jdbc:sqlite:" + normalizedPath + "tasks.db?foreign_keys=on";
+    String normalizedPath = dbPath.trim();
+    if (!normalizedPath.endsWith(System.getProperty("file.separator"))) {
+      normalizedPath += System.getProperty("file.separator");
     }
 
-    protected Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url);
+    this.url = "jdbc:sqlite:" + normalizedPath + "tasks.db?foreign_keys=on";
+  }
+
+  protected Connection getConnection() throws SQLException {
+    return DriverManager.getConnection(url);
+  }
+
+  public void initTables() throws SQLException {
+    try (Connection conn = getConnection()) {
+      try (Statement stmt = conn.createStatement()) {
+        createTasksTable(stmt);
+        createProjectsTable(stmt);
+
+        stmt.execute("ANALYZE");
+      }
     }
+  }
 
-    public void initTables() throws SQLException {
-        try (Connection conn = getConnection()) {
-            try (Statement stmt = conn.createStatement()) {
-                createTasksTable(stmt);
-                createProjectsTable(stmt);
-
-                stmt.execute("ANALYZE");
-            }
-        }
-    }
-
-    private void createTasksTable(Statement stmt) throws SQLException {
-        stmt.execute("""
+  private void createTasksTable(Statement stmt) throws SQLException {
+    stmt.execute(
+        """
                     CREATE TABLE IF NOT EXISTS tasks (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
@@ -51,10 +51,11 @@ public abstract class DatabaseRepository {
                         CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
                     )
                 """);
-    }
+  }
 
-    private void createProjectsTable(Statement stmt) throws SQLException {
-        stmt.execute("""
+  private void createProjectsTable(Statement stmt) throws SQLException {
+    stmt.execute(
+        """
                     CREATE TABLE IF NOT EXISTS projects (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL UNIQUE,
@@ -62,10 +63,9 @@ public abstract class DatabaseRepository {
                         created_at INTEGER NOT NULL
                     )
                 """);
-    }
+  }
 
-    public String getUrl() {
-        return this.url;
-    }
-
+  public String getUrl() {
+    return this.url;
+  }
 }

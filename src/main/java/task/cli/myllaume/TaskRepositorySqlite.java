@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
-
 import task.cli.myllaume.csv.TaskCsv;
 import task.cli.myllaume.csv.TaskRepositoryCsv;
 import task.cli.myllaume.db.DatabaseRepository;
@@ -16,150 +15,156 @@ import task.cli.myllaume.utils.StringUtils;
 
 public class TaskRepositorySqlite extends DatabaseRepository {
 
-    public TaskRepositorySqlite(String dbPath) {
-        super(dbPath);
-    }
+  public TaskRepositorySqlite(String dbPath) {
+    super(dbPath);
+  }
 
-    public Task createTask(TaskData data) throws Exception {
+  public Task createTask(TaskData data) throws Exception {
 
-        String sql = """
+    String sql =
+        """
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            String fulltext = StringUtils.normalizeString(data.getDescription());
+      String fulltext = StringUtils.normalizeString(data.getDescription());
 
-            pstmt.setString(1, data.getDescription());
-            pstmt.setBoolean(2, data.getCompleted());
-            pstmt.setString(3, fulltext);
-            pstmt.setInt(4, data.getPriority().getLevel());
-            if (data.getDueDate() == null) {
-                pstmt.setNull(5, java.sql.Types.INTEGER);
-            } else {
-                pstmt.setLong(5, data.getDueDate().getEpochSecond());
-            }
-            if (data.getCompleted()) {
-                pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
-            } else {
-                pstmt.setNull(6, java.sql.Types.INTEGER);
-            }
-            pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
-            pstmt.executeUpdate();
+      pstmt.setString(1, data.getDescription());
+      pstmt.setBoolean(2, data.getCompleted());
+      pstmt.setString(3, fulltext);
+      pstmt.setInt(4, data.getPriority().getLevel());
+      if (data.getDueDate() == null) {
+        pstmt.setNull(5, java.sql.Types.INTEGER);
+      } else {
+        pstmt.setLong(5, data.getDueDate().getEpochSecond());
+      }
+      if (data.getCompleted()) {
+        pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
+      } else {
+        pstmt.setNull(6, java.sql.Types.INTEGER);
+      }
+      pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
+      pstmt.executeUpdate();
 
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    int id = rs.getInt(1);
-                    return getTask(id);
-                } else {
-                    throw new SQLException("Impossible de récupérer l'ID généré.");
-                }
-            }
+      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+        if (rs.next()) {
+          int id = rs.getInt(1);
+          return getTask(id);
+        } else {
+          throw new SQLException("Impossible de récupérer l'ID généré.");
         }
+      }
     }
+  }
 
-    public Task createSubTask(int parentId, TaskData data) throws Exception {
-        String sql = """
+  public Task createSubTask(int parentId, TaskData data) throws Exception {
+    String sql =
+        """
                 INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            String fulltext = StringUtils.normalizeString(data.getDescription());
+      String fulltext = StringUtils.normalizeString(data.getDescription());
 
-            pstmt.setString(1, data.getDescription());
-            pstmt.setBoolean(2, data.getCompleted());
-            pstmt.setString(3, fulltext);
-            pstmt.setInt(4, data.getPriority().getLevel());
-            if (data.getDueDate() == null) {
-                pstmt.setNull(5, java.sql.Types.INTEGER);
-            } else {
-                pstmt.setLong(5, data.getDueDate().getEpochSecond());
-            }
-            if (data.getCompleted()) {
-                pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
-            } else {
-                pstmt.setNull(6, java.sql.Types.INTEGER);
-            }
-            pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
-            pstmt.setInt(8, parentId);
-            pstmt.executeUpdate();
+      pstmt.setString(1, data.getDescription());
+      pstmt.setBoolean(2, data.getCompleted());
+      pstmt.setString(3, fulltext);
+      pstmt.setInt(4, data.getPriority().getLevel());
+      if (data.getDueDate() == null) {
+        pstmt.setNull(5, java.sql.Types.INTEGER);
+      } else {
+        pstmt.setLong(5, data.getDueDate().getEpochSecond());
+      }
+      if (data.getCompleted()) {
+        pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
+      } else {
+        pstmt.setNull(6, java.sql.Types.INTEGER);
+      }
+      pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
+      pstmt.setInt(8, parentId);
+      pstmt.executeUpdate();
 
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    int id = rs.getInt(1);
-                    return getTask(id);
-                } else {
-                    throw new SQLException("Impossible de récupérer l'ID généré.");
-                }
-            }
-        } catch (SQLException e) {
-            // FK constraints to exception
-            if (e.getMessage() != null && e.getMessage().contains("FOREIGN KEY constraint")) {
-                throw new UnknownTaskException(parentId);
-            }
-            throw e;
+      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+        if (rs.next()) {
+          int id = rs.getInt(1);
+          return getTask(id);
+        } else {
+          throw new SQLException("Impossible de récupérer l'ID généré.");
         }
+      }
+    } catch (SQLException e) {
+      // FK constraints to exception
+      if (e.getMessage() != null && e.getMessage().contains("FOREIGN KEY constraint")) {
+        throw new UnknownTaskException(parentId);
+      }
+      throw e;
+    }
+  }
+
+  public Task removeTask(int id) throws Exception {
+    String deleteSql = "DELETE FROM tasks WHERE id = ?";
+
+    Task task = getTask(id);
+    if (task == null) {
+      throw new UnknownTaskException(id);
     }
 
-    public Task removeTask(int id) throws Exception {
-        String deleteSql = "DELETE FROM tasks WHERE id = ?";
+    try (Connection conn = getConnection();
+        PreparedStatement deletePstmt = conn.prepareStatement(deleteSql)) {
 
-        Task task = getTask(id);
-        if (task == null) {
-            throw new UnknownTaskException(id);
-        }
-
-        try (Connection conn = getConnection();
-                PreparedStatement deletePstmt = conn.prepareStatement(deleteSql)) {
-
-            deletePstmt.setInt(1, id);
-            int affected = deletePstmt.executeUpdate();
-            if (affected == 0) {
-                throw new IllegalArgumentException("Cannot find task was about to delete");
-            }
-            return task;
-        }
+      deletePstmt.setInt(1, id);
+      int affected = deletePstmt.executeUpdate();
+      if (affected == 0) {
+        throw new IllegalArgumentException("Cannot find task was about to delete");
+      }
+      return task;
     }
+  }
 
-    public Task getTask(int id) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks WHERE id = ?";
+  public Task getTask(int id) throws Exception {
+    String sql =
+        "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks WHERE id = ?";
 
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Task.fromSqlResult(rs);
-                } else {
-                    return null;
-                }
-            }
+      pstmt.setInt(1, id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return Task.fromSqlResult(rs);
+        } else {
+          return null;
         }
+      }
     }
+  }
 
-    public ArrayList<Task> getTasks(int limit) throws Exception {
-        String sql = "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks ORDER BY name ASC LIMIT ?";
+  public ArrayList<Task> getTasks(int limit) throws Exception {
+    String sql =
+        "SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks ORDER BY name ASC LIMIT ?";
 
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, limit);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                ArrayList<Task> tasks = new ArrayList<>();
-                while (rs.next()) {
-                    tasks.add(Task.fromSqlResult(rs));
-                }
-                return tasks;
-            }
+      pstmt.setInt(1, limit);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        ArrayList<Task> tasks = new ArrayList<>();
+        while (rs.next()) {
+          tasks.add(Task.fromSqlResult(rs));
         }
+        return tasks;
+      }
     }
+  }
 
-    public ArrayList<Task> getTasksOrderByPriority(int dueInDays, int limit) throws Exception {
-        String sql = String.format("""
+  public ArrayList<Task> getTasksOrderByPriority(int dueInDays, int limit) throws Exception {
+    String sql =
+        String.format(
+            """
                 SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at FROM tasks
                 WHERE
                     parent_id IS NULL AND
@@ -169,290 +174,299 @@ public class TaskRepositorySqlite extends DatabaseRepository {
                     priority DESC,
                     id ASC
                 LIMIT ?
-                """, dueInDays);
+                """,
+            dueInDays);
 
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, limit);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                ArrayList<Task> tasks = new ArrayList<>();
-                while (rs.next()) {
-                    tasks.add(Task.fromSqlResult(rs));
-                }
-                return tasks;
-            }
+      pstmt.setInt(1, limit);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        ArrayList<Task> tasks = new ArrayList<>();
+        while (rs.next()) {
+          tasks.add(Task.fromSqlResult(rs));
         }
+        return tasks;
+      }
+    }
+  }
+
+  public Task getTaskWithSubTasks(int id, int limit) throws Exception {
+    Task parentTask = getTask(id);
+    if (parentTask == null) {
+      throw new UnknownTaskException(id);
     }
 
-    public Task getTaskWithSubTasks(int id, int limit) throws Exception {
-        Task parentTask = getTask(id);
-        if (parentTask == null) {
-            throw new UnknownTaskException(id);
-        }
-
-        String subTaskSql = """
+    String subTaskSql =
+        """
                 SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
                 FROM tasks
                 WHERE parent_id = ?
                 ORDER BY name ASC LIMIT ?
                 """;
-        try (Connection conn = getConnection();
-                PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
+    try (Connection conn = getConnection();
+        PreparedStatement subPstmt = conn.prepareStatement(subTaskSql)) {
 
-            subPstmt.setInt(1, id);
-            subPstmt.setInt(2, limit);
-            try (ResultSet rs = subPstmt.executeQuery()) {
-                ArrayList<Task> subTasks = new ArrayList<>();
-                while (rs.next()) {
-                    subTasks.add(Task.fromSqlResult(rs));
-                }
-                return Task.of(parentTask.getId(),
-                        parentTask.getDescription(),
-                        parentTask.getCompleted(),
-                        parentTask.getFulltext(),
-                        parentTask.getPriority(),
-                        parentTask.getCreatedAt(),
-                        parentTask.getDueDate(),
-                        parentTask.getDoneAt(),
-                        subTasks);
-            }
+      subPstmt.setInt(1, id);
+      subPstmt.setInt(2, limit);
+      try (ResultSet rs = subPstmt.executeQuery()) {
+        ArrayList<Task> subTasks = new ArrayList<>();
+        while (rs.next()) {
+          subTasks.add(Task.fromSqlResult(rs));
         }
+        return Task.of(
+            parentTask.getId(),
+            parentTask.getDescription(),
+            parentTask.getCompleted(),
+            parentTask.getFulltext(),
+            parentTask.getPriority(),
+            parentTask.getCreatedAt(),
+            parentTask.getDueDate(),
+            parentTask.getDoneAt(),
+            subTasks);
+      }
     }
+  }
 
-    public Task getLastTask() throws Exception {
-        String sql = """
+  public Task getLastTask() throws Exception {
+    String sql =
+        """
                 SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
                 FROM tasks
                 WHERE parent_id IS NULL
                 ORDER BY id DESC LIMIT 1
                 """;
 
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        ResultSet rs = pstmt.executeQuery()) {
 
-            if (rs.next()) {
-                return Task.fromSqlResult(rs);
-            } else {
-                return null;
-            }
-        }
+      if (rs.next()) {
+        return Task.fromSqlResult(rs);
+      } else {
+        return null;
+      }
     }
+  }
 
-    private ArrayList<Task> searchTasksProcess(String keyword, int limit, String sql) throws Exception {
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+  private ArrayList<Task> searchTasksProcess(String keyword, int limit, String sql)
+      throws Exception {
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            keyword = StringUtils.normalizeString(keyword);
+      keyword = StringUtils.normalizeString(keyword);
 
-            pstmt.setString(1, "%" + keyword + "%");
-            pstmt.setInt(2, limit);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                ArrayList<Task> tasks = new ArrayList<>();
-                while (rs.next()) {
-                    tasks.add(Task.fromSqlResult(rs));
-                }
-                return tasks;
-            }
+      pstmt.setString(1, "%" + keyword + "%");
+      pstmt.setInt(2, limit);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        ArrayList<Task> tasks = new ArrayList<>();
+        while (rs.next()) {
+          tasks.add(Task.fromSqlResult(rs));
         }
+        return tasks;
+      }
     }
+  }
 
-    public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
-        String sql = """
+  public ArrayList<Task> searchTasks(String keyword, int limit) throws Exception {
+    String sql =
+        """
                 SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
                 FROM tasks
                 WHERE fulltext LIKE ? AND parent_id IS NULL
                 ORDER BY name ASC LIMIT ?
                 """;
-        return searchTasksProcess(keyword, limit, sql);
-    }
+    return searchTasksProcess(keyword, limit, sql);
+  }
 
-    public ArrayList<Task> searchTasksTodo(String keyword, int limit) throws Exception {
-        String sql = """
+  public ArrayList<Task> searchTasksTodo(String keyword, int limit) throws Exception {
+    String sql =
+        """
                 SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
                 FROM tasks
                 WHERE fulltext LIKE ? AND completed = 0 AND parent_id IS NULL
                 ORDER BY name ASC LIMIT ?
                 """;
-        return searchTasksProcess(keyword, limit, sql);
-    }
+    return searchTasksProcess(keyword, limit, sql);
+  }
 
-    public ArrayList<Task> searchTasksDone(String keyword, int limit) throws Exception {
-        String sql = """
+  public ArrayList<Task> searchTasksDone(String keyword, int limit) throws Exception {
+    String sql =
+        """
                 SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
                 FROM tasks
                 WHERE fulltext LIKE ? AND completed = 1 AND parent_id IS NULL
                 ORDER BY name ASC LIMIT ?
                 """;
-        return searchTasksProcess(keyword, limit, sql);
+    return searchTasksProcess(keyword, limit, sql);
+  }
+
+  public Task updateTaskName(int id, String name) throws Exception {
+    Task existingTask = getTask(id);
+
+    if (existingTask == null) {
+      throw new UnknownTaskException(id);
     }
 
-    public Task updateTaskName(int id, String name) throws Exception {
-        Task existingTask = getTask(id);
+    String fulltext = StringUtils.normalizeString(name);
 
-        if (existingTask == null) {
-            throw new UnknownTaskException(id);
-        }
+    String sql = "UPDATE tasks SET name = ?, fulltext = ? WHERE id = ?";
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        String fulltext = StringUtils.normalizeString(name);
+      pstmt.setString(1, name);
+      pstmt.setString(2, fulltext);
+      pstmt.setInt(3, id);
+      pstmt.executeUpdate();
 
-        String sql = "UPDATE tasks SET name = ?, fulltext = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      return getTask(id);
+    }
+  }
 
-            pstmt.setString(1, name);
-            pstmt.setString(2, fulltext);
-            pstmt.setInt(3, id);
-            pstmt.executeUpdate();
+  public Task updateTaskCompleted(int id, boolean completed) throws Exception {
+    Task existingTask = getTask(id);
 
-            return getTask(id);
-        }
+    if (existingTask == null) {
+      throw new UnknownTaskException(id);
     }
 
-    public Task updateTaskCompleted(int id, boolean completed) throws Exception {
-        Task existingTask = getTask(id);
+    String sql = "UPDATE tasks SET completed = ?, done_at = ? WHERE id = ?";
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        if (existingTask == null) {
-            throw new UnknownTaskException(id);
-        }
+      pstmt.setBoolean(1, completed);
+      if (completed) {
+        pstmt.setLong(2, Instant.now().getEpochSecond());
+      } else {
+        pstmt.setNull(2, java.sql.Types.INTEGER);
+      }
+      pstmt.setInt(3, id);
+      pstmt.executeUpdate();
 
-        String sql = "UPDATE tasks SET completed = ?, done_at = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      return getTask(id);
+    }
+  }
 
-            pstmt.setBoolean(1, completed);
-            if (completed) {
-                pstmt.setLong(2, Instant.now().getEpochSecond());
-            } else {
-                pstmt.setNull(2, java.sql.Types.INTEGER);
-            }
-            pstmt.setInt(3, id);
-            pstmt.executeUpdate();
+  public Task updateTaskPriority(int id, TaskPriority priority) throws Exception {
+    Task existingTask = getTask(id);
 
-            return getTask(id);
-        }
+    if (existingTask == null) {
+      throw new UnknownTaskException(id);
     }
 
-    public Task updateTaskPriority(int id, TaskPriority priority) throws Exception {
-        Task existingTask = getTask(id);
+    String sql = "UPDATE tasks SET priority = ? WHERE id = ?";
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        if (existingTask == null) {
-            throw new UnknownTaskException(id);
-        }
+      pstmt.setInt(1, priority.getLevel());
+      pstmt.setInt(2, id);
+      pstmt.executeUpdate();
 
-        String sql = "UPDATE tasks SET priority = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      return getTask(id);
+    }
+  }
 
-            pstmt.setInt(1, priority.getLevel());
-            pstmt.setInt(2, id);
-            pstmt.executeUpdate();
+  public Task updateTaskDueDate(int id, Instant dueDate) throws Exception {
+    Task existingTask = getTask(id);
 
-            return getTask(id);
-        }
+    if (existingTask == null) {
+      throw new UnknownTaskException(id);
     }
 
-    public Task updateTaskDueDate(int id, Instant dueDate) throws Exception {
-        Task existingTask = getTask(id);
+    String sql = "UPDATE tasks SET due_at = ? WHERE id = ?";
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        if (existingTask == null) {
-            throw new UnknownTaskException(id);
-        }
+      if (dueDate == null) {
+        pstmt.setNull(1, java.sql.Types.INTEGER);
+      } else {
+        pstmt.setLong(1, dueDate.getEpochSecond());
+      }
+      pstmt.setInt(2, id);
+      pstmt.executeUpdate();
 
-        String sql = "UPDATE tasks SET due_at = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      return getTask(id);
+    }
+  }
 
-            if (dueDate == null) {
-                pstmt.setNull(1, java.sql.Types.INTEGER);
-            } else {
-                pstmt.setLong(1, dueDate.getEpochSecond());
-            }
-            pstmt.setInt(2, id);
-            pstmt.executeUpdate();
+  public String getUrl() {
+    return this.url;
+  }
 
-            return getTask(id);
-        }
+  private int executeCountQuery(String sql) throws Exception {
+    try (Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql)) {
+
+      if (rs.next()) {
+        return rs.getInt("total");
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  public int countTasks() throws Exception {
+    return executeCountQuery("SELECT COUNT(*) AS total FROM tasks");
+  }
+
+  public int countTasksTodo() throws Exception {
+    return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 0");
+  }
+
+  public int countTasksDone() throws Exception {
+    return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 1");
+  }
+
+  public void importFromCsv(String csvPath) throws Exception {
+    ArrayList<TaskCsv> tasks;
+
+    try {
+      TaskRepositoryCsv repo = TaskRepositoryCsv.of(csvPath);
+      tasks = repo.getTasks();
+    } catch (Exception e) {
+      throw new Exception("Le fichier CSV contient des erreurs, l'import est annulé.");
     }
 
-    public String getUrl() {
-        return this.url;
-    }
+    Instant now = Instant.now();
 
-    private int executeCountQuery(String sql) throws Exception {
-        try (Connection conn = getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql)) {
-
-            if (rs.next()) {
-                return rs.getInt("total");
-            } else {
-                return 0;
-            }
-        }
-    }
-
-    public int countTasks() throws Exception {
-        return executeCountQuery("SELECT COUNT(*) AS total FROM tasks");
-    }
-
-    public int countTasksTodo() throws Exception {
-        return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 0");
-    }
-
-    public int countTasksDone() throws Exception {
-        return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 1");
-    }
-
-    public void importFromCsv(String csvPath) throws Exception {
-        ArrayList<TaskCsv> tasks;
-
-        try {
-            TaskRepositoryCsv repo = TaskRepositoryCsv.of(csvPath);
-            tasks = repo.getTasks();
-        } catch (Exception e) {
-            throw new Exception("Le fichier CSV contient des erreurs, l'import est annulé.");
-        }
-
-        Instant now = Instant.now();
-
-        String sql = """
+    String sql =
+        """
                 INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            conn.setAutoCommit(false);
-            for (TaskCsv task : tasks) {
-                pstmt.setString(1, task.getDescription());
-                pstmt.setBoolean(2, task.getCompleted());
-                pstmt.setString(3, StringUtils.normalizeString(task.getDescription()));
-                pstmt.setLong(4, now.getEpochSecond());
-                if (task.getCompleted()) {
-                    pstmt.setLong(5, now.getEpochSecond());
-                } else {
-                    pstmt.setNull(5, java.sql.Types.INTEGER);
-                }
-                pstmt.setInt(6, TaskPriority.LOW.getLevel());
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-            conn.commit();
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      conn.setAutoCommit(false);
+      for (TaskCsv task : tasks) {
+        pstmt.setString(1, task.getDescription());
+        pstmt.setBoolean(2, task.getCompleted());
+        pstmt.setString(3, StringUtils.normalizeString(task.getDescription()));
+        pstmt.setLong(4, now.getEpochSecond());
+        if (task.getCompleted()) {
+          pstmt.setLong(5, now.getEpochSecond());
+        } else {
+          pstmt.setNull(5, java.sql.Types.INTEGER);
         }
+        pstmt.setInt(6, TaskPriority.LOW.getLevel());
+        pstmt.addBatch();
+      }
+      pstmt.executeBatch();
+      conn.commit();
     }
+  }
 
-    public void exportToCsv(String csvPath, int limit, boolean overwrite) throws Exception {
-        ArrayList<Task> tasks = getTasks(limit);
+  public void exportToCsv(String csvPath, int limit, boolean overwrite) throws Exception {
+    ArrayList<Task> tasks = getTasks(limit);
 
-        File csvFile = new File(csvPath);
+    File csvFile = new File(csvPath);
 
-        TaskRepositoryCsv repo = TaskRepositoryCsv.of(csvFile.getAbsolutePath());
-        repo.init(overwrite);
+    TaskRepositoryCsv repo = TaskRepositoryCsv.of(csvFile.getAbsolutePath());
+    repo.init(overwrite);
 
-        for (Task task : tasks) {
-            TaskCsv taskCsv = new TaskCsv(task.getId(), task.getDescription(), task.getCompleted());
-            repo.addLineAtEnd(taskCsv);
-        }
+    for (Task task : tasks) {
+      TaskCsv taskCsv = new TaskCsv(task.getId(), task.getDescription(), task.getCompleted());
+      repo.addLineAtEnd(taskCsv);
     }
+  }
 }

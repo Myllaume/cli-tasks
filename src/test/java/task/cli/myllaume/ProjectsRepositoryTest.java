@@ -3,13 +3,8 @@ package task.cli.myllaume;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
 

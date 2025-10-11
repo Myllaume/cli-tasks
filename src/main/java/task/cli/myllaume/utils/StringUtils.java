@@ -1,7 +1,6 @@
 package task.cli.myllaume.utils;
 
 import java.text.Normalizer;
-import java.util.Objects;
 
 public class StringUtils {
     public static String normalizeString(String input) {

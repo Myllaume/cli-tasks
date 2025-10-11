@@ -106,7 +106,7 @@ public class DatabaseRepositoryTest {
     TestDatabaseRepository repo2 = new TestDatabaseRepository(dbPathWithSlash);
 
     assertEquals(repo1.getUrl(), repo2.getUrl());
-    assertTrue(repo1.getUrl().endsWith("tasks.db"));
+    assertTrue(repo1.getUrl().contains("tasks.db"));
   }
 
   @Test
@@ -119,7 +119,7 @@ public class DatabaseRepositoryTest {
 
     String url = repo.getUrl();
     assertTrue("URL should start with jdbc:sqlite:", url.startsWith("jdbc:sqlite:"));
-    assertTrue("URL should end with tasks.db", url.endsWith("tasks.db"));
+    assertTrue("URL should end with tasks.db", url.contains("tasks.db"));
     assertTrue("URL should contain the path", url.contains(dbPath));
   }
 

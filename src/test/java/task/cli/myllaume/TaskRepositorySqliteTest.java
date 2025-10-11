@@ -5,10 +5,6 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -18,88 +14,6 @@ import org.junit.Test;
 
 public class TaskRepositorySqliteTest {
   private static final ZoneId timeZone = ZoneId.of("Europe/Paris");
-
-  @Test
-  public void testInitCreatesDatabaseFile() throws Exception {
-    Path tempDir = Files.createTempDirectory("tests");
-    tempDir.toFile().deleteOnExit();
-
-    String dbPath = tempDir.toString();
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-
-    repo.initTables();
-
-    File dbFile = new File(dbPath + System.getProperty("file.separator") + "tasks.db");
-    assertTrue(dbFile.exists());
-  }
-
-  @Test
-  public void testInitCreatesDatabaseTable() throws Exception {
-    Path tempDir = Files.createTempDirectory("tests");
-    tempDir.toFile().deleteOnExit();
-
-    String dbPath = tempDir.toString();
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-
-    repo.initTables();
-    String url = repo.getUrl();
-
-    try (Connection conn = DriverManager.getConnection(url)) {
-      Statement stmt = conn.createStatement();
-      ResultSet rs =
-          stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'");
-      assertTrue(rs.next());
-      assertEquals("tasks", rs.getString("name"));
-    }
-  }
-
-  @Test
-  public void testInitWithNonExistentDirectory() throws Exception {
-    String dbPath = "/tmp/nonexistent/path/";
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-
-    try {
-      repo.initTables();
-      fail("Should have thrown an exception for non-existent directory");
-    } catch (Exception e) {
-      assertNotNull(e);
-    }
-  }
-
-  @Test
-  public void testConstructorWithNullPath() {
-    try {
-      new TaskRepositorySqlite(null);
-      fail("Should have thrown NullPointerException for null path");
-    } catch (NullPointerException e) {
-      assertEquals("Database path cannot be null or empty", e.getMessage());
-    }
-  }
-
-  @Test
-  public void testConstructorWithEmptyPath() {
-    try {
-      new TaskRepositorySqlite("   ");
-      fail("Should have thrown IllegalArgumentException for empty path");
-    } catch (IllegalArgumentException e) {
-      assertEquals("Database path cannot be null or empty", e.getMessage());
-    }
-  }
-
-  @Test
-  public void testConstructorNormalizesPath() throws Exception {
-    Path tempDir = Files.createTempDirectory("tests");
-    tempDir.toFile().deleteOnExit();
-
-    String dbPathWithoutSlash = tempDir.toString();
-    String dbPathWithSlash = tempDir.toString() + "/";
-
-    TaskRepositorySqlite repo1 = new TaskRepositorySqlite(dbPathWithoutSlash);
-    TaskRepositorySqlite repo2 = new TaskRepositorySqlite(dbPathWithSlash);
-
-    assertEquals(repo1.getUrl(), repo2.getUrl());
-    assertTrue(repo1.getUrl().endsWith("tasks.db"));
-  }
 
   @Test
   public void testCreateTaskSuccess() throws Exception {

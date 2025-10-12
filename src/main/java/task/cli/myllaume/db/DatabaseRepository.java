@@ -60,7 +60,8 @@ public abstract class DatabaseRepository {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             fulltext TEXT NOT NULL,
-            created_at INTEGER NOT NULL
+            created_at INTEGER NOT NULL,
+            is_current INTEGER NOT NULL DEFAULT 0
         )
         """);
   }

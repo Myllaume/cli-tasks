@@ -435,24 +435,31 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority)
         VALUES (?, ?, ?, ?, ?, ?)
         """;
-    try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (Connection conn = getConnection()) {
       conn.setAutoCommit(false);
-      for (TaskCsv task : tasks) {
-        pstmt.setString(1, task.getDescription());
-        pstmt.setBoolean(2, task.getCompleted());
-        pstmt.setString(3, StringUtils.normalizeString(task.getDescription()));
-        pstmt.setLong(4, now.getEpochSecond());
-        if (task.getCompleted()) {
-          pstmt.setLong(5, now.getEpochSecond());
-        } else {
-          pstmt.setNull(5, java.sql.Types.INTEGER);
+
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        for (TaskCsv task : tasks) {
+          pstmt.setString(1, task.getDescription());
+          pstmt.setBoolean(2, task.getCompleted());
+          pstmt.setString(3, StringUtils.normalizeString(task.getDescription()));
+          pstmt.setLong(4, now.getEpochSecond());
+          if (task.getCompleted()) {
+            pstmt.setLong(5, now.getEpochSecond());
+          } else {
+            pstmt.setNull(5, java.sql.Types.INTEGER);
+          }
+          pstmt.setInt(6, TaskPriority.LOW.getLevel());
+          pstmt.addBatch();
         }
-        pstmt.setInt(6, TaskPriority.LOW.getLevel());
-        pstmt.addBatch();
+        pstmt.executeBatch();
+        conn.commit();
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
       }
-      pstmt.executeBatch();
-      conn.commit();
     }
   }
 

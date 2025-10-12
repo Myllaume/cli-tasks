@@ -43,6 +43,107 @@ public class ProjectsRepository extends DatabaseRepository {
     }
   }
 
+  public ProjectDb createDefaultProject(ProjectData data) throws Exception {
+    String sql =
+        """
+        INSERT INTO projects (name, fulltext, created_at, is_current)
+        VALUES (?, ?, ?, ?)
+        """;
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+      String fulltext = StringUtils.normalizeString(data.getName());
+
+      pstmt.setString(1, data.getName());
+      pstmt.setString(2, fulltext);
+      pstmt.setLong(3, data.getCreatedAt().getEpochSecond());
+      pstmt.setInt(4, 1);
+      pstmt.executeUpdate();
+
+      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+        if (rs.next()) {
+          int id = rs.getInt(1);
+          return getProject(id);
+        } else {
+          throw new SQLException("Impossible de récupérer l'ID généré.");
+        }
+      }
+    }
+  }
+
+  public ProjectDb getCurrentProject() throws Exception {
+    String sql =
+        """
+        SELECT id, name, fulltext, created_at,
+          (SELECT COUNT(*) FROM projects WHERE is_current = 1) as current_count
+        FROM projects
+        WHERE is_current = 1
+        """;
+
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        ResultSet rs = pstmt.executeQuery()) {
+
+      if (rs.next()) {
+        int currentCount = rs.getInt("current_count");
+        if (currentCount > 1) {
+          throw new IllegalStateException(
+              "Database integrity error: multiple projects marked as current ("
+                  + currentCount
+                  + ")");
+        }
+        return ProjectDb.fromSqlResult(rs);
+      } else {
+        return null;
+      }
+    }
+  }
+
+  public boolean hasCurrentProject() throws Exception {
+    String sql = "SELECT COUNT(*) AS total FROM projects WHERE is_current = 1";
+
+    try (Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql)) {
+
+      if (rs.next()) {
+        return rs.getInt("total") > 0;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  public ProjectDb updateCurrentProject(int id) throws Exception {
+    String clearSql = "UPDATE projects SET is_current = 0 WHERE is_current = 1";
+    String setSql = "UPDATE projects SET is_current = 1 WHERE id = ?";
+
+    try (Connection conn = getConnection()) {
+      conn.setAutoCommit(false);
+
+      try (PreparedStatement clearPstmt = conn.prepareStatement(clearSql);
+          PreparedStatement setPstmt = conn.prepareStatement(setSql)) {
+
+        clearPstmt.executeUpdate();
+
+        setPstmt.setInt(1, id);
+        int affected = setPstmt.executeUpdate();
+        if (affected != 1) {
+          throw new IllegalArgumentException("Cannot find project was about to set as current");
+        }
+
+        conn.commit();
+
+        return getCurrentProject();
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    }
+  }
+
   public ProjectDb getProject(int id) throws Exception {
     String sql = "SELECT id, name, fulltext, created_at FROM projects WHERE id = ?";
 

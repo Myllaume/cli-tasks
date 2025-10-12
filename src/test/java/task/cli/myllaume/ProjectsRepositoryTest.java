@@ -213,4 +213,76 @@ public class ProjectsRepositoryTest {
     repo.createProject(ProjectData.of("Project 2", Instant.now()));
     assertEquals(2, repo.countProjects());
   }
+
+  @Test
+  public void testDefaultProject() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    ProjectsRepository repo = new ProjectsRepository(dbPath);
+    repo.initTables();
+
+    assertFalse(repo.hasCurrentProject());
+
+    Instant now = Instant.now();
+    ProjectDb defaultProject = repo.createDefaultProject(ProjectData.of("Default Project", now));
+
+    assertEquals("Default Project", defaultProject.getName());
+    assertTrue(defaultProject.getId() > 0);
+    assertEquals("defaultproject", defaultProject.getFulltext());
+    assertEquals(now.getEpochSecond(), defaultProject.getCreatedAt().getEpochSecond());
+
+    assertTrue(repo.hasCurrentProject());
+
+    ProjectDb currentProject = repo.getCurrentProject();
+    assertEquals(defaultProject.getId(), currentProject.getId());
+    assertEquals(defaultProject.getName(), currentProject.getName());
+    assertEquals(defaultProject.getFulltext(), currentProject.getFulltext());
+    assertEquals(
+        defaultProject.getCreatedAt().getEpochSecond(),
+        currentProject.getCreatedAt().getEpochSecond());
+  }
+
+  @Test
+  public void testUpdateCurrentProjectSuccess() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    ProjectsRepository repo = new ProjectsRepository(dbPath);
+    repo.initTables();
+
+    ProjectDb defaultProject =
+        repo.createDefaultProject(ProjectData.of("Default Project", Instant.now()));
+    assertEquals(defaultProject.getId(), repo.getCurrentProject().getId());
+
+    ProjectDb secondProject = repo.createProject(ProjectData.of("Second Project", Instant.now()));
+
+    ProjectDb updatedCurrentProject = repo.updateCurrentProject(secondProject.getId());
+
+    assertEquals(secondProject.getId(), updatedCurrentProject.getId());
+
+    ProjectDb currentProject = repo.getCurrentProject();
+    assertEquals(secondProject.getId(), currentProject.getId());
+  }
+
+  @Test
+  public void testUpdateCurrentProjectNonExistent() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    ProjectsRepository repo = new ProjectsRepository(dbPath);
+    repo.initTables();
+
+    repo.createDefaultProject(ProjectData.of("Default Project", Instant.now()));
+
+    try {
+      repo.updateCurrentProject(999);
+      fail("Should have thrown IllegalArgumentException for non-existent project");
+    } catch (IllegalArgumentException e) {
+      assertEquals("Cannot find project was about to set as current", e.getMessage());
+    }
+  }
 }

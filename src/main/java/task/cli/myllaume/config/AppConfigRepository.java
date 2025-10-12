@@ -50,9 +50,15 @@ public class AppConfigRepository {
     transformer.transform(source, result);
   }
 
+  public boolean fileExists() {
+    File file = new File(filePath);
+    return file.exists();
+  }
+
   public void init() throws Exception {
-    if (new File(filePath).exists()) {
-      return;
+    if (fileExists()) {
+      File file = new File(filePath);
+      throw new Exception("Config file already exists at " + file.getAbsolutePath());
     }
 
     AppConfig config = new AppConfig("1.0");

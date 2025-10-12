@@ -43,11 +43,12 @@ public class ProjectsRepository extends DatabaseRepository {
     }
   }
 
-  public ProjectDb createDefaultProject(ProjectData data) throws Exception {
+  public ProjectDb insertDefaultProjectIfNoneExists(ProjectData data) throws Exception {
     String sql =
         """
         INSERT INTO projects (name, fulltext, created_at, is_current)
-        VALUES (?, ?, ?, ?)
+        SELECT ?, ?, ?, ?
+        WHERE NOT EXISTS (SELECT 1 FROM projects)
         """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -58,7 +59,12 @@ public class ProjectsRepository extends DatabaseRepository {
       pstmt.setString(2, fulltext);
       pstmt.setLong(3, data.getCreatedAt().getEpochSecond());
       pstmt.setInt(4, 1);
-      pstmt.executeUpdate();
+      int rowsAffected = pstmt.executeUpdate();
+
+      if (rowsAffected == 0) {
+        throw new IllegalStateException(
+            "Impossible de créer le projet par défaut : un projet existe déjà.");
+      }
 
       try (ResultSet rs = pstmt.getGeneratedKeys()) {
         if (rs.next()) {
@@ -100,14 +106,14 @@ public class ProjectsRepository extends DatabaseRepository {
   }
 
   public boolean hasCurrentProject() throws Exception {
-    String sql = "SELECT COUNT(*) AS total FROM projects WHERE is_current = 1";
+    String sql = "SELECT EXISTS(SELECT 1 FROM projects WHERE is_current = 1) AS has_current";
 
     try (Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(sql)) {
 
       if (rs.next()) {
-        return rs.getInt("total") > 0;
+        return rs.getBoolean("has_current");
       } else {
         return false;
       }
@@ -265,5 +271,9 @@ public class ProjectsRepository extends DatabaseRepository {
 
   public int countProjects() throws Exception {
     return executeCountQuery("SELECT COUNT(*) AS total FROM projects");
+  }
+
+  public boolean isEmpty() throws Exception {
+    return countProjects() == 0;
   }
 }

@@ -3,6 +3,7 @@ package task.cli.myllaume;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import task.cli.myllaume.config.AppConfigRepository;
+import task.cli.myllaume.db.ProjectsRepository;
 
 @Command(name = "tasks", mixinStandardHelpOptions = true, description = "Gestion des tâches en CLI")
 public class App implements Runnable {
@@ -12,38 +13,46 @@ public class App implements Runnable {
   }
 
   public static void main(String[] args) {
-    String configDir = new AppDirs().getConfigDir();
-    AppConfigRepository appConfig = new AppConfigRepository(configDir);
     try {
-      appConfig.init();
+
+      AppDirs appDirs = new AppDirs();
+      String dataDir = appDirs.getDataDir();
+
+      ProjectsRepository projectsRepository = new ProjectsRepository(dataDir);
+      AppState appState = new AppState(new AppConfigRepository(dataDir), projectsRepository);
+
+      try {
+        if (appState.isFirstLaunch()) {
+          appState.firstLaunchSetup();
+          System.out.println("✓ Initial configuration completed successfully");
+        }
+      } catch (Exception e) {
+        System.err.println("Critical error during first launch: " + e.getMessage());
+        System.err.println("Please check write permissions in: " + dataDir);
+        System.exit(1);
+      }
+
+      TaskRepositorySqlite tasksRepo = new TaskRepositorySqlite(dataDir);
+
+      CommandLine cmd = new CommandLine(new App());
+      CommandList commandList = new CommandList(tasksRepo);
+      cmd.addSubcommand("list", commandList);
+      CommandAdd commandAdd = new CommandAdd(tasksRepo);
+      cmd.addSubcommand("add", commandAdd);
+      CommandSearch commandSearch = new CommandSearch(tasksRepo);
+      cmd.addSubcommand("search", commandSearch);
+      CommandRemove commandRemove = new CommandRemove(tasksRepo);
+      cmd.addSubcommand("remove", commandRemove);
+      CommandDone commandDone = new CommandDone(tasksRepo);
+      cmd.addSubcommand("done", commandDone);
+
+      int exitCode = cmd.execute(args);
+      System.exit(exitCode);
+
     } catch (Exception e) {
-      System.out.println("Erreur lors de l'initialisation de la configuration : " + e.getMessage());
+      System.err.println("Unexpected error: " + e.getMessage());
+      e.printStackTrace(System.err);
+      System.exit(1);
     }
-
-    String dataDir = new AppDirs().getDataDir();
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dataDir);
-
-    CommandLine cmd = new CommandLine(new App());
-
-    try {
-      repo.initTables();
-    } catch (Exception e) {
-      System.out.println(
-          "Erreur lors de l'initialisation de la base de données : " + e.getMessage());
-    }
-
-    CommandList commandList = new CommandList(repo);
-    cmd.addSubcommand("list", commandList);
-    CommandAdd commandAdd = new CommandAdd(repo);
-    cmd.addSubcommand("add", commandAdd);
-    CommandSearch commandSearch = new CommandSearch(repo);
-    cmd.addSubcommand("search", commandSearch);
-    CommandRemove commandRemove = new CommandRemove(repo);
-    cmd.addSubcommand("remove", commandRemove);
-    CommandDone commandDone = new CommandDone(repo);
-    cmd.addSubcommand("done", commandDone);
-
-    int exitCode = cmd.execute(args);
-    System.exit(exitCode);
   }
 }

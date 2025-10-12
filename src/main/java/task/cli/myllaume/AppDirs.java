@@ -1,5 +1,8 @@
 package task.cli.myllaume;
 
+import java.io.File;
+import task.cli.myllaume.utils.Validators;
+
 public class AppDirs {
   private final String configDir;
   private final String cacheDir;
@@ -30,14 +33,35 @@ public class AppDirs {
   }
 
   public String getConfigDir() {
+    validateDirectory(configDir);
     return configDir;
   }
 
   public String getCacheDir() {
+    validateDirectory(cacheDir);
     return cacheDir;
   }
 
   public String getDataDir() {
+    validateDirectory(dataDir);
     return dataDir;
+  }
+
+  private void validateDirectory(String path) {
+    Validators.throwNullOrEmptyString(path, "Directory path cannot be null or empty");
+
+    File dir = new File(path);
+
+    if (!dir.exists() && !dir.mkdirs()) {
+      throw new IllegalStateException("Unable to create data directory: " + path);
+    }
+
+    if (!dir.isDirectory()) {
+      throw new IllegalStateException("Path exists but is not a directory: " + path);
+    }
+
+    if (!dir.canWrite()) {
+      throw new IllegalStateException("No write permission in directory: " + path);
+    }
   }
 }

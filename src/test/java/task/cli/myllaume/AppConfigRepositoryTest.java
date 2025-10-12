@@ -30,7 +30,13 @@ public class AppConfigRepositoryTest {
     AppConfigRepository configRepo = new AppConfigRepository(tempDir.toString());
     configRepo.init();
     configRepo.setAppVersion("2.0");
-    configRepo.init();
+
+    try {
+      configRepo.init();
+      fail("Expected an exception when calling init() on existing config");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Config file already exists"));
+    }
 
     String appVersion = configRepo.getAppVersion();
     assertEquals("2.0", appVersion);

@@ -226,7 +226,8 @@ public class ProjectsRepositoryTest {
     assertFalse(repo.hasCurrentProject());
 
     Instant now = Instant.now();
-    ProjectDb defaultProject = repo.createDefaultProject(ProjectData.of("Default Project", now));
+    ProjectDb defaultProject =
+        repo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", now));
 
     assertEquals("Default Project", defaultProject.getName());
     assertTrue(defaultProject.getId() > 0);
@@ -254,7 +255,7 @@ public class ProjectsRepositoryTest {
     repo.initTables();
 
     ProjectDb defaultProject =
-        repo.createDefaultProject(ProjectData.of("Default Project", Instant.now()));
+        repo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
     assertEquals(defaultProject.getId(), repo.getCurrentProject().getId());
 
     ProjectDb secondProject = repo.createProject(ProjectData.of("Second Project", Instant.now()));
@@ -276,7 +277,7 @@ public class ProjectsRepositoryTest {
     ProjectsRepository repo = new ProjectsRepository(dbPath);
     repo.initTables();
 
-    repo.createDefaultProject(ProjectData.of("Default Project", Instant.now()));
+    repo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     try {
       repo.updateCurrentProject(999);

@@ -6,11 +6,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import org.junit.Test;
 import picocli.CommandLine;
+import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class CommandAddTest {
+  private TaskManager getManager(String dbPath) throws Exception {
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    ProjectsRepository repoProject = new ProjectsRepository(dbPath);
+    repoTasks.initTables();
+    repoProject.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
+    TaskManager manager = new TaskManager(repoTasks, repoProject);
+    return manager;
+  }
 
   @Test
   public void testRunWithDefaultOptions() throws Exception {
@@ -23,14 +34,13 @@ public class CommandAddTest {
     tempDir.toFile().deleteOnExit();
 
     String dbPath = tempDir.toString();
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-    repo.initTables();
+    TaskManager manager = getManager(dbPath);
 
     try {
       System.setErr(new PrintStream(err));
       System.setOut(new PrintStream(out));
 
-      CommandAdd cmd = new CommandAdd(repo);
+      CommandAdd cmd = new CommandAdd(manager);
       new CommandLine(cmd).parseArgs("Test");
       cmd.run();
     } finally {
@@ -41,7 +51,8 @@ public class CommandAddTest {
     assertEquals("", err.toString());
     assertEquals("La tâche '1. Test' a été ajoutée.\n", out.toString());
 
-    ArrayList<Task> tasks = repo.getTasks(10);
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    ArrayList<Task> tasks = repoTasks.getTasks(10);
     assertEquals(1, tasks.size());
     Task task = tasks.get(0);
     assertEquals("Test", task.getDescription());
@@ -60,14 +71,13 @@ public class CommandAddTest {
     tempDir.toFile().deleteOnExit();
 
     String dbPath = tempDir.toString();
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
-    repo.initTables();
+    TaskManager manager = getManager(dbPath);
 
     try {
       System.setErr(new PrintStream(err));
       System.setOut(new PrintStream(out));
 
-      CommandAdd cmd = new CommandAdd(repo);
+      CommandAdd cmd = new CommandAdd(manager);
       cmd.description = "Test";
       cmd.completed = true;
       cmd.priority = 3;
@@ -80,7 +90,8 @@ public class CommandAddTest {
     assertEquals("", err.toString());
     assertEquals("La tâche '1. Test' a été ajoutée.\n", out.toString());
 
-    ArrayList<Task> tasks = repo.getTasks(10);
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    ArrayList<Task> tasks = repoTasks.getTasks(10);
     assertEquals(1, tasks.size());
     Task task = tasks.get(0);
     assertEquals("Test", task.getDescription());

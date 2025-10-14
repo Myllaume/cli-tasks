@@ -6,11 +6,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.ArrayList;
 import org.junit.Test;
 import picocli.CommandLine;
+import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class CommandSearchTest {
+
+  private TaskManager getManager(String path) throws Exception {
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(path);
+    ProjectsRepository repoProjects = new ProjectsRepository(path);
+    TaskManager manager = new TaskManager(repoTasks, repoProjects);
+    ProjectData defaultProject = new ProjectData("Default", Instant.now());
+    repoProjects.insertDefaultProjectIfNoneExists(defaultProject);
+    return manager;
+  }
 
   @Test
   public void testRunWithMaxResult() throws Exception {
@@ -24,8 +36,9 @@ public class CommandSearchTest {
 
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
     repo.initTables();
+    TaskManager manager = getManager(tempDir.getAbsolutePath());
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
 
     ArrayList<Task> tasks = repo.getTasks(100);
     assertEquals(52, tasks.size());
@@ -74,8 +87,9 @@ public class CommandSearchTest {
 
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
     repo.initTables();
+    TaskManager manager = getManager(tempDir.getAbsolutePath());
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
 
     ArrayList<Task> tasks = repo.getTasks(100);
     assertEquals(52, tasks.size());
@@ -116,8 +130,9 @@ public class CommandSearchTest {
 
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
     repo.initTables();
+    TaskManager manager = getManager(tempDir.getAbsolutePath());
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
 
     ArrayList<Task> tasks = repo.getTasks(100);
     assertEquals(52, tasks.size());
@@ -152,7 +167,9 @@ public class CommandSearchTest {
 
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
     repo.initTables();
-    repo.importFromCsv("src/test/resources/many.csv");
+    TaskManager manager = getManager(tempDir.getAbsolutePath());
+
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
 
     ArrayList<Task> tasks = repo.getTasks(100);
     assertEquals(52, tasks.size());
@@ -195,7 +212,9 @@ public class CommandSearchTest {
 
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.getAbsolutePath());
     repo.initTables();
-    repo.importFromCsv("src/test/resources/many.csv");
+    TaskManager manager = getManager(tempDir.getAbsolutePath());
+
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
 
     ArrayList<Task> tasks = repo.getTasks(100);
     assertEquals(52, tasks.size());

@@ -8,8 +8,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import org.junit.Test;
+import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class CommandDoneTest {
+
+  private Task createTask(String dbPath, TaskData data) throws Exception {
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    ProjectsRepository repoProject = new ProjectsRepository(dbPath);
+    repoTasks.initTables();
+    if (!repoProject.hasCurrentProject()) {
+      repoProject.insertDefaultProjectIfNoneExists(
+          ProjectData.of("Default Project", Instant.now()));
+    }
+    TaskManager manager = new TaskManager(repoTasks, repoProject);
+
+    return manager.createTaskOnCurrentProject(data);
+  }
 
   @Test
   public void testRunWithId() throws Exception {
@@ -27,7 +42,7 @@ public class CommandDoneTest {
 
     TaskData taskData =
         TaskData.of("Test task", false, TaskPriority.LOW, Instant.now(), null, null);
-    Task task = repo.createTask(taskData);
+    Task task = createTask(dbPath, taskData);
 
     try {
       System.setErr(new PrintStream(err));
@@ -65,10 +80,10 @@ public class CommandDoneTest {
 
     TaskData firstTaskData =
         TaskData.of("First task", false, TaskPriority.LOW, Instant.now(), null, null);
-    Task firstTask = repo.createTask(firstTaskData);
+    Task firstTask = createTask(dbPath, firstTaskData);
     TaskData lastTaskData =
         TaskData.of("Last task", false, TaskPriority.HIGH, Instant.now(), null, null);
-    Task lastTask = repo.createTask(lastTaskData);
+    Task lastTask = createTask(dbPath, lastTaskData);
     assertFalse(lastTask.getCompleted());
 
     try {
@@ -108,7 +123,7 @@ public class CommandDoneTest {
 
     TaskData data =
         TaskData.of("Completed task", true, TaskPriority.LOW, Instant.now(), null, Instant.now());
-    Task task = repo.createTask(data);
+    Task task = createTask(dbPath, data);
 
     try {
       System.setErr(new PrintStream(err));

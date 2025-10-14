@@ -19,50 +19,11 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     super(dbPath);
   }
 
-  public Task createTask(TaskData data) throws Exception {
+  public Task createTask(TaskData data, int projectId) throws Exception {
 
     String sql =
         """
-        INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """;
-    try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-      String fulltext = StringUtils.normalizeString(data.getDescription());
-
-      pstmt.setString(1, data.getDescription());
-      pstmt.setBoolean(2, data.getCompleted());
-      pstmt.setString(3, fulltext);
-      pstmt.setInt(4, data.getPriority().getLevel());
-      if (data.getDueDate() == null) {
-        pstmt.setNull(5, java.sql.Types.INTEGER);
-      } else {
-        pstmt.setLong(5, data.getDueDate().getEpochSecond());
-      }
-      if (data.getCompleted()) {
-        pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
-      } else {
-        pstmt.setNull(6, java.sql.Types.INTEGER);
-      }
-      pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
-      pstmt.executeUpdate();
-
-      try (ResultSet rs = pstmt.getGeneratedKeys()) {
-        if (rs.next()) {
-          int id = rs.getInt(1);
-          return getTask(id);
-        } else {
-          throw new SQLException("Impossible de récupérer l'ID généré.");
-        }
-      }
-    }
-  }
-
-  public Task createSubTask(int parentId, TaskData data) throws Exception {
-    String sql =
-        """
-        INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id)
+        INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, project_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
     try (Connection conn = getConnection();
@@ -85,7 +46,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         pstmt.setNull(6, java.sql.Types.INTEGER);
       }
       pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
-      pstmt.setInt(8, parentId);
+      pstmt.setLong(8, projectId);
       pstmt.executeUpdate();
 
       try (ResultSet rs = pstmt.getGeneratedKeys()) {
@@ -99,6 +60,54 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     } catch (SQLException e) {
       // FK constraints to exception
       if (e.getMessage() != null && e.getMessage().contains("FOREIGN KEY constraint")) {
+        throw new UnknownProjectException(projectId);
+      }
+      throw e;
+    }
+  }
+
+  public Task createSubTask(int parentId, TaskData data) throws Exception {
+    String sql =
+        """
+        INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id, project_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT project_id FROM tasks WHERE id = ?))
+        """;
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+      String fulltext = StringUtils.normalizeString(data.getDescription());
+
+      pstmt.setString(1, data.getDescription());
+      pstmt.setBoolean(2, data.getCompleted());
+      pstmt.setString(3, fulltext);
+      pstmt.setInt(4, data.getPriority().getLevel());
+      if (data.getDueDate() == null) {
+        pstmt.setNull(5, java.sql.Types.INTEGER);
+      } else {
+        pstmt.setLong(5, data.getDueDate().getEpochSecond());
+      }
+      if (data.getCompleted()) {
+        pstmt.setLong(6, data.getCreatedAt().getEpochSecond());
+      } else {
+        pstmt.setNull(6, java.sql.Types.INTEGER);
+      }
+      pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
+      pstmt.setInt(8, parentId);
+      pstmt.setInt(9, parentId);
+      pstmt.executeUpdate();
+
+      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+        if (rs.next()) {
+          int id = rs.getInt(1);
+          return getTask(id);
+        } else {
+          throw new SQLException("Impossible de récupérer l'ID généré.");
+        }
+      }
+    } catch (SQLException e) {
+      if (e.getMessage() != null
+          && (e.getMessage().contains("FOREIGN KEY constraint")
+              || e.getMessage().contains("constraint failed: tasks.project_id"))) {
         throw new UnknownTaskException(parentId);
       }
       throw e;
@@ -151,6 +160,31 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setInt(1, limit);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        ArrayList<Task> tasks = new ArrayList<>();
+        while (rs.next()) {
+          tasks.add(Task.fromSqlResult(rs));
+        }
+        return tasks;
+      }
+    }
+  }
+
+  public ArrayList<Task> getProjectTasks(int projectId, int limit) throws Exception {
+    String sql =
+        """
+        SELECT id, name, completed, fulltext, priority, created_at, due_at, done_at
+        FROM tasks
+        WHERE project_id = ?
+        ORDER BY name ASC
+        LIMIT ?
+        """;
+
+    try (Connection conn = getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+      pstmt.setInt(1, projectId);
+      pstmt.setInt(2, limit);
       try (ResultSet rs = pstmt.executeQuery()) {
         ArrayList<Task> tasks = new ArrayList<>();
         while (rs.next()) {
@@ -418,7 +452,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 1");
   }
 
-  public void importFromCsv(String csvPath) throws Exception {
+  public void importFromCsv(String csvPath, int projectId) throws Exception {
     ArrayList<TaskCsv> tasks;
 
     try {
@@ -432,8 +466,8 @@ public class TaskRepositorySqlite extends DatabaseRepository {
 
     String sql =
         """
-        INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority, project_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """;
     try (Connection conn = getConnection()) {
       conn.setAutoCommit(false);
@@ -450,6 +484,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
             pstmt.setNull(5, java.sql.Types.INTEGER);
           }
           pstmt.setInt(6, TaskPriority.LOW.getLevel());
+          pstmt.setInt(7, projectId);
           pstmt.addBatch();
         }
         pstmt.executeBatch();

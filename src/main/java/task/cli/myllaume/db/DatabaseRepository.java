@@ -48,7 +48,9 @@ public abstract class DatabaseRepository {
             due_at INTEGER NULL,
             done_at INTEGER NULL,
             parent_id INTEGER NULL,
-            CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+            project_id INTEGER NOT NULL,
+            CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE,
+            CONSTRAINT fk_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         )
         """);
   }

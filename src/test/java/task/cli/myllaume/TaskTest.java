@@ -14,6 +14,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import org.junit.Test;
+import task.cli.myllaume.db.ProjectsRepository;
 
 public class TaskTest {
   @Test
@@ -198,8 +199,13 @@ public class TaskTest {
     Path tempDir = Files.createTempDirectory("test_fromSqlResult");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    ProjectsRepository repoProject = new ProjectsRepository(dbPath);
     repo.initTables();
+    ProjectDb project =
+        repoProject.insertDefaultProjectIfNoneExists(
+            ProjectData.of("Default Project", Instant.now()));
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
@@ -207,7 +213,7 @@ public class TaskTest {
 
     TaskData taskData =
         TaskData.of("Tâche de test SQL", true, TaskPriority.LOW, Instant.now(), dueDate, null);
-    Task originalTask = repo.createTask(taskData);
+    Task originalTask = repo.createTask(taskData, project.getId());
 
     String url = repo.getUrl();
     String sql =

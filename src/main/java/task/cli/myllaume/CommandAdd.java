@@ -4,13 +4,14 @@ import java.time.Instant;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import task.cli.myllaume.db.TaskManager;
 
 @Command(name = "add", description = "Ajouter une tâche")
 public class CommandAdd implements Runnable {
-  private final TaskRepositorySqlite repo;
+  private final TaskManager manager;
 
-  public CommandAdd(TaskRepositorySqlite repo) {
-    this.repo = repo;
+  public CommandAdd(TaskManager manager) {
+    this.manager = manager;
   }
 
   @Parameters(index = "0", description = "Nom de la tâche")
@@ -26,7 +27,7 @@ public class CommandAdd implements Runnable {
   public void run() {
     try {
       Task task =
-          repo.createTask(
+          manager.createTaskOnCurrentProject(
               TaskData.of(
                   description,
                   completed,

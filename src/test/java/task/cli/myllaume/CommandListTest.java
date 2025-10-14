@@ -8,8 +8,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import org.junit.Test;
+import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class CommandListTest {
+
+  private Task createTask(String dbPath, TaskData data) throws Exception {
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    ProjectsRepository repoProject = new ProjectsRepository(dbPath);
+    repoTasks.initTables();
+    if (!repoProject.hasCurrentProject()) {
+      repoProject.insertDefaultProjectIfNoneExists(
+          ProjectData.of("Default Project", Instant.now()));
+    }
+    TaskManager manager = new TaskManager(repoTasks, repoProject);
+
+    return manager.createTaskOnCurrentProject(data);
+  }
 
   @Test
   public void testRunOnelineTrue() throws Exception {
@@ -27,9 +42,9 @@ public class CommandListTest {
 
     Instant now = Instant.now();
     TaskData taskOne = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
-    repo.createTask(taskOne);
+    createTask(dbPath, taskOne);
     TaskData taskTwo = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
-    repo.createTask(taskTwo);
+    createTask(dbPath, taskTwo);
 
     try {
       System.setErr(new PrintStream(err));
@@ -63,7 +78,7 @@ public class CommandListTest {
 
     Instant now = Instant.now();
     TaskData taskData = TaskData.of("Test", false, TaskPriority.LOW, now, null, null);
-    repo.createTask(taskData);
+    createTask(dbPath, taskData);
 
     try {
       System.setErr(new PrintStream(err));

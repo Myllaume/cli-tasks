@@ -11,9 +11,26 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import org.junit.Test;
+import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class TaskRepositorySqliteTest {
   private static final ZoneId timeZone = ZoneId.of("Europe/Paris");
+  private ProjectData defaultProject = ProjectData.of("Default Project", Instant.now());
+
+  private ProjectDb getDefaultProjectDb(String dbPath) throws Exception {
+    ProjectsRepository repoProject = new ProjectsRepository(dbPath);
+    return repoProject.insertDefaultProjectIfNoneExists(defaultProject);
+  }
+
+  private TaskManager getManager(String path) throws Exception {
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(path);
+    ProjectsRepository repoProjects = new ProjectsRepository(path);
+    TaskManager manager = new TaskManager(repoTasks, repoProjects);
+    ProjectData defaultProject = new ProjectData("Default", Instant.now());
+    repoProjects.insertDefaultProjectIfNoneExists(defaultProject);
+    return manager;
+  }
 
   @Test
   public void testCreateTaskSuccess() throws Exception {
@@ -23,6 +40,7 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString();
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     LocalDateTime localDateTime = LocalDateTime.parse("2025-10-01 15:30", formatter);
@@ -30,7 +48,8 @@ public class TaskRepositorySqliteTest {
 
     Task task =
         repo.createTask(
-            TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), dueDate, null));
+            TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), dueDate, null),
+            project.getId());
 
     assertNotNull(task);
     assertEquals("Test Task", task.getDescription());
@@ -48,11 +67,12 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString();
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     try {
       Instant now = Instant.now();
       TaskData nullTaskData = TaskData.of(null, false, TaskPriority.LOW, now, null, null);
-      repo.createTask(nullTaskData);
+      repo.createTask(nullTaskData, project.getId());
       fail("Should have thrown NullPointerException for null name");
     } catch (NullPointerException e) {
       assertEquals("Description cannot be null or empty", e.getMessage());
@@ -67,9 +87,11 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString();
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     try {
-      repo.createTask(TaskData.of("   ", false, TaskPriority.LOW, Instant.now(), null, null));
+      repo.createTask(
+          TaskData.of("   ", false, TaskPriority.LOW, Instant.now(), null, null), project.getId());
       fail("Should have thrown IllegalArgumentException for empty name");
     } catch (IllegalArgumentException e) {
       assertEquals("Description cannot be null or empty", e.getMessage());
@@ -84,10 +106,12 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString();
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task addedTask =
         repo.createTask(
-            TaskData.of("Task to Remove", false, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Task to Remove", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
     assertNotNull(addedTask);
     int taskId = addedTask.getId();
 
@@ -126,12 +150,19 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString() + "/";
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task task =
-        repo.createTask(TaskData.of("Task1", false, TaskPriority.LOW, Instant.now(), null, null));
-    repo.createTask(TaskData.of("Task2", false, TaskPriority.MEDIUM, Instant.now(), null, null));
-    repo.createTask(TaskData.of("Task3", false, TaskPriority.LOW, Instant.now(), null, null));
-    repo.createTask(TaskData.of("Task4", false, TaskPriority.HIGH, Instant.now(), null, null));
+        repo.createTask(
+            TaskData.of("Task1", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
+    repo.createTask(
+        TaskData.of("Task2", false, TaskPriority.MEDIUM, Instant.now(), null, null),
+        project.getId());
+    repo.createTask(
+        TaskData.of("Task3", false, TaskPriority.LOW, Instant.now(), null, null), project.getId());
+    repo.createTask(
+        TaskData.of("Task4", false, TaskPriority.HIGH, Instant.now(), null, null), project.getId());
 
     ArrayList<Task> tasks = repo.getTasks(3);
 
@@ -154,8 +185,9 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString() + "/";
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    TaskManager manager = getManager(dbPath);
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
     int count = repo.countTasks();
     assertEquals(52, count);
   }
@@ -169,8 +201,9 @@ public class TaskRepositorySqliteTest {
 
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
     repo.initTables();
+    TaskManager manager = getManager(tempDir.toString());
 
-    repo.importFromCsv(importedFile.getAbsolutePath());
+    manager.importFromCsvOnCurrentProject(importedFile.getAbsolutePath());
     repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
 
     assertTrue("Exported file should exist", exportedFile.exists());
@@ -191,10 +224,11 @@ public class TaskRepositorySqliteTest {
     tempDir.toFile().deleteOnExit();
 
     String dbPath = tempDir.toString() + "/";
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
     repo.initTables();
+    TaskManager manager = getManager(tempDir.toString());
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
     ArrayList<Task> tasks = repo.searchTasks("test", 5);
 
     assertEquals(5, tasks.size());
@@ -208,8 +242,9 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString() + "/";
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    TaskManager manager = getManager(dbPath);
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
     ArrayList<Task> tasks = repo.searchTasksDone("test", 100);
 
     assertEquals(8, tasks.size());
@@ -223,8 +258,9 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString() + "/";
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    TaskManager manager = getManager(dbPath);
 
-    repo.importFromCsv("src/test/resources/many.csv");
+    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
     ArrayList<Task> tasks = repo.searchTasksTodo("test", 100);
 
     assertEquals(1, tasks.size());
@@ -238,10 +274,12 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString() + "/";
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task addedTask =
         repo.createTask(
-            TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
     assertNotNull(addedTask);
     int taskId = addedTask.getId();
 
@@ -269,12 +307,15 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task originalTask =
         repo.createTask(
-            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
 
     Task updatedTask = repo.updateTaskName(originalTask.getId(), "Updated Task");
 
@@ -287,12 +328,15 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task originalTask =
         repo.createTask(
-            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
     assertNull(originalTask.getDoneAt());
 
     Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), true);
@@ -306,12 +350,15 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task originalTask =
         repo.createTask(
-            TaskData.of("Original Task", true, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Original Task", true, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
     assertNotNull(originalTask.getDoneAt());
 
     Task updatedTask = repo.updateTaskCompleted(originalTask.getId(), false);
@@ -325,12 +372,15 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task originalTask =
         repo.createTask(
-            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
 
     Task updatedTask = repo.updateTaskPriority(originalTask.getId(), TaskPriority.HIGH);
 
@@ -342,12 +392,15 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task originalTask =
         repo.createTask(
-            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null));
+            TaskData.of("Original Task", false, TaskPriority.LOW, Instant.now(), null, null),
+            project.getId());
 
     Instant tomorrow = LocalDateTime.now().plusDays(1).atZone(timeZone).toInstant();
     Task updatedTask = repo.updateTaskDueDate(originalTask.getId(), tomorrow);
@@ -362,12 +415,15 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Task parentTask =
         repo.createTask(
-            TaskData.of("Parent Task", false, TaskPriority.MEDIUM, Instant.now(), null, null));
+            TaskData.of("Parent Task", false, TaskPriority.MEDIUM, Instant.now(), null, null),
+            project.getId());
     assertNotNull(parentTask);
 
     Instant tomorrow = LocalDateTime.now().plusDays(1).atZone(timeZone).toInstant();
@@ -420,19 +476,25 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Instant now = Instant.now();
 
     Task highTask =
         repo.createTask(
-            TaskData.of("High Priority Task", false, TaskPriority.HIGH, now, null, null));
+            TaskData.of("High Priority Task", false, TaskPriority.HIGH, now, null, null),
+            project.getId());
     Task lowTask =
-        repo.createTask(TaskData.of("Low Priority Task", false, TaskPriority.LOW, now, null, null));
+        repo.createTask(
+            TaskData.of("Low Priority Task", false, TaskPriority.LOW, now, null, null),
+            project.getId());
     Task mediumTask =
         repo.createTask(
-            TaskData.of("Medium Priority Task", false, TaskPriority.MEDIUM, now, null, null));
+            TaskData.of("Medium Priority Task", false, TaskPriority.MEDIUM, now, null, null),
+            project.getId());
 
     Instant tomorrow = LocalDateTime.now().plusDays(1).atZone(timeZone).toInstant();
     Instant nextDay = LocalDateTime.now().plusDays(2).atZone(timeZone).toInstant();
@@ -440,23 +502,29 @@ public class TaskRepositorySqliteTest {
 
     Task tomorrowTask =
         repo.createTask(
-            TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
+            TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null),
+            project.getId());
     Task tomorrowTaskNewer =
         repo.createTask(
-            TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null));
+            TaskData.of("Tomorrow Task", false, TaskPriority.MEDIUM, now, tomorrow, null),
+            project.getId());
     Task nextDayTask =
         repo.createTask(
-            TaskData.of("Next Day Task", false, TaskPriority.MEDIUM, now, nextDay, null));
+            TaskData.of("Next Day Task", false, TaskPriority.MEDIUM, now, nextDay, null),
+            project.getId());
     Task nextWeekTask =
         repo.createTask(
-            TaskData.of("Next week Task", false, TaskPriority.MEDIUM, now, nextWeek, null));
+            TaskData.of("Next week Task", false, TaskPriority.MEDIUM, now, nextWeek, null),
+            project.getId());
     // Not in result because is done
-    repo.createTask(TaskData.of("Done Task", true, TaskPriority.MEDIUM, now, null, null));
+    repo.createTask(
+        TaskData.of("Done Task", true, TaskPriority.MEDIUM, now, null, null), project.getId());
     // Not in result because is subtask
     repo.createSubTask(
         tomorrowTask.getId(), TaskData.of("Sub Task", false, TaskPriority.MEDIUM, now, null, null));
     // Not in result because of the limit
-    repo.createTask(TaskData.of("Next week Task", false, TaskPriority.LOW, now, null, null));
+    repo.createTask(
+        TaskData.of("Next week Task", false, TaskPriority.LOW, now, null, null), project.getId());
 
     ArrayList<Task> tasks = repo.getTasksOrderByPriority(3, 7);
 
@@ -479,22 +547,28 @@ public class TaskRepositorySqliteTest {
     Path tempDir = Files.createTempDirectory("tests");
     tempDir.toFile().deleteOnExit();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
+    ProjectDb project = getDefaultProjectDb(dbPath);
 
     Instant now = Instant.now();
 
     Task parentTask =
-        repo.createTask(Task.of("Parent Task", false, TaskPriority.MEDIUM, now, null, null));
+        repo.createTask(
+            TaskData.of("Parent Task", false, TaskPriority.MEDIUM, now, null, null),
+            project.getId());
     assertNotNull(parentTask);
 
     Task subTask1 =
         repo.createSubTask(
-            parentTask.getId(), Task.of("Sub Task 1", false, TaskPriority.MEDIUM, now, null, null));
+            parentTask.getId(),
+            TaskData.of("Sub Task 1", false, TaskPriority.MEDIUM, now, null, null));
 
     Task subTask2 =
         repo.createSubTask(
-            parentTask.getId(), Task.of("Sub Task 2", false, TaskPriority.LOW, now, null, null));
+            parentTask.getId(),
+            TaskData.of("Sub Task 2", false, TaskPriority.LOW, now, null, null));
 
     assertNotNull(repo.getTask(subTask1.getId()));
     assertNotNull(repo.getTask(subTask2.getId()));
@@ -507,5 +581,50 @@ public class TaskRepositorySqliteTest {
 
     Task subTask2FromDb = repo.getTask(subTask2.getId());
     assertNull("Sub task 2 should be deleted by CASCADE", subTask2FromDb);
+  }
+
+  @Test
+  public void testExceptionWhenProjectNotFound() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    repo.initTables();
+
+    try {
+      repo.createTask(
+          TaskData.of("Test Task", false, TaskPriority.LOW, Instant.now(), null, null), 999);
+      fail("Should have thrown UnknownProjectException for non-existent project");
+    } catch (UnknownProjectException e) {
+      assertEquals("Aucun projet trouvé avec l'ID: 999", e.getMessage());
+    }
+  }
+
+  @Test
+  public void getProjectTasks() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    repoTasks.initTables();
+    ProjectsRepository repoProjects = new ProjectsRepository(dbPath);
+
+    Instant now = Instant.now();
+    ProjectDb project1 = repoProjects.createProject(ProjectData.of("Project 1", now));
+    ProjectDb project2 = repoProjects.createProject(ProjectData.of("Project 2", now));
+
+    repoTasks.createTask(
+        TaskData.of("Task 1", false, TaskPriority.LOW, now, null, null), project1.getId());
+    repoTasks.createTask(
+        TaskData.of("Task 2", false, TaskPriority.LOW, now, null, null), project1.getId());
+    repoTasks.createTask(
+        TaskData.of("Task 3", false, TaskPriority.LOW, now, null, null), project2.getId());
+
+    assertEquals(repoTasks.getProjectTasks(project1.getId(), 10).size(), 2);
+    assertEquals(repoTasks.getProjectTasks(project1.getId(), 1).size(), 1);
+    assertEquals(repoTasks.getProjectTasks(project2.getId(), 10).size(), 1);
   }
 }

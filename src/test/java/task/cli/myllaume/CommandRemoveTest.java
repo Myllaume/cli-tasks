@@ -9,8 +9,23 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import org.junit.Test;
+import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class CommandRemoveTest {
+
+  private Task createTask(String dbPath, TaskData data) throws Exception {
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(dbPath);
+    ProjectsRepository repoProject = new ProjectsRepository(dbPath);
+    repoTasks.initTables();
+    if (!repoProject.hasCurrentProject()) {
+      repoProject.insertDefaultProjectIfNoneExists(
+          ProjectData.of("Default Project", Instant.now()));
+    }
+    TaskManager manager = new TaskManager(repoTasks, repoProject);
+
+    return manager.createTaskOnCurrentProject(data);
+  }
 
   @Test
   public void testRun() throws Exception {
@@ -28,9 +43,9 @@ public class CommandRemoveTest {
 
     Instant now = Instant.now();
     TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
-    repo.createTask(taskOneData);
+    createTask(dbPath, taskOneData);
     TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
-    Task task2 = repo.createTask(taskTwoData);
+    Task task2 = createTask(dbPath, taskTwoData);
 
     try {
       System.setErr(new PrintStream(err));
@@ -68,9 +83,9 @@ public class CommandRemoveTest {
 
     Instant now = Instant.now();
     TaskData taskOneData = TaskData.of("One", false, TaskPriority.LOW, now, null, null);
-    repo.createTask(taskOneData);
+    createTask(dbPath, taskOneData);
     TaskData taskTwoData = TaskData.of("Two", true, TaskPriority.LOW, now, null, now);
-    repo.createTask(taskTwoData);
+    createTask(dbPath, taskTwoData);
 
     try {
       System.setErr(new PrintStream(err));

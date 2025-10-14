@@ -4,6 +4,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import task.cli.myllaume.config.AppConfigRepository;
 import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 @Command(name = "tasks", mixinStandardHelpOptions = true, description = "Gestion des tâches en CLI")
 public class App implements Runnable {
@@ -34,10 +35,12 @@ public class App implements Runnable {
 
       TaskRepositorySqlite tasksRepo = new TaskRepositorySqlite(dataDir);
 
+      TaskManager manager = new TaskManager(tasksRepo, projectsRepository);
+
       CommandLine cmd = new CommandLine(new App());
       CommandList commandList = new CommandList(tasksRepo);
       cmd.addSubcommand("list", commandList);
-      CommandAdd commandAdd = new CommandAdd(tasksRepo);
+      CommandAdd commandAdd = new CommandAdd(manager);
       cmd.addSubcommand("add", commandAdd);
       CommandSearch commandSearch = new CommandSearch(tasksRepo);
       cmd.addSubcommand("search", commandSearch);

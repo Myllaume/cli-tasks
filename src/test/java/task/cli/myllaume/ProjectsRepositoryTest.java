@@ -10,6 +10,7 @@ import org.junit.Test;
 import task.cli.myllaume.db.ProjectsRepository;
 
 public class ProjectsRepositoryTest {
+  private ProjectData defaultProjectData = ProjectData.of("Default Project", Instant.now());
 
   @Test
   public void testCreateProjectSuccess() throws Exception {
@@ -38,6 +39,7 @@ public class ProjectsRepositoryTest {
     ProjectsRepository repo = new ProjectsRepository(dbPath);
     repo.initTables();
 
+    repo.insertDefaultProjectIfNoneExists(defaultProjectData);
     ProjectDb addedProject = repo.createProject(ProjectData.of("Project to Remove", Instant.now()));
     assertNotNull(addedProject);
     int projectId = addedProject.getId();
@@ -59,6 +61,7 @@ public class ProjectsRepositoryTest {
     String dbPath = tempDir.toString();
     ProjectsRepository repo = new ProjectsRepository(dbPath);
     repo.initTables();
+    repo.insertDefaultProjectIfNoneExists(defaultProjectData);
 
     try {
       repo.removeProject(999); // ID qui n'existe pas
@@ -226,8 +229,7 @@ public class ProjectsRepositoryTest {
     assertFalse(repo.hasCurrentProject());
 
     Instant now = Instant.now();
-    ProjectDb defaultProject =
-        repo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", now));
+    ProjectDb defaultProject = repo.insertDefaultProjectIfNoneExists(defaultProjectData);
 
     assertEquals("Default Project", defaultProject.getName());
     assertTrue(defaultProject.getId() > 0);
@@ -254,8 +256,7 @@ public class ProjectsRepositoryTest {
     ProjectsRepository repo = new ProjectsRepository(dbPath);
     repo.initTables();
 
-    ProjectDb defaultProject =
-        repo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
+    ProjectDb defaultProject = repo.insertDefaultProjectIfNoneExists(defaultProjectData);
     assertEquals(defaultProject.getId(), repo.getCurrentProject().getId());
 
     ProjectDb secondProject = repo.createProject(ProjectData.of("Second Project", Instant.now()));
@@ -277,7 +278,7 @@ public class ProjectsRepositoryTest {
     ProjectsRepository repo = new ProjectsRepository(dbPath);
     repo.initTables();
 
-    repo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
+    repo.insertDefaultProjectIfNoneExists(defaultProjectData);
 
     try {
       repo.updateCurrentProject(999);
@@ -285,5 +286,69 @@ public class ProjectsRepositoryTest {
     } catch (IllegalArgumentException e) {
       assertEquals("Cannot find project was about to set as current", e.getMessage());
     }
+  }
+
+  @Test
+  public void testThrowOnDeleteWithoutCurrentProject() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    ProjectsRepository repo = new ProjectsRepository(dbPath);
+    repo.initTables();
+
+    ProjectDb project = repo.createProject(defaultProjectData);
+
+    try {
+      repo.removeProject(project.getId());
+      fail("Should have thrown IllegalStateException when trying to delete current project");
+    } catch (NullPointerException e) {
+      assertEquals("Current project cannot be null to delete a project", e.getMessage());
+    }
+  }
+
+  @Test
+  public void testThrowExceptionOnDeleteCurrentProject() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    ProjectsRepository repo = new ProjectsRepository(dbPath);
+    repo.initTables();
+
+    ProjectDb project = repo.insertDefaultProjectIfNoneExists(defaultProjectData);
+
+    try {
+      repo.removeProject(project.getId());
+      fail("Should have thrown IllegalStateException when trying to delete current project");
+    } catch (IllegalStateException e) {
+      assertEquals("Cannot delete the current project", e.getMessage());
+    }
+  }
+
+  @Test
+  public void testDeleteProjectDeleteTasks() throws Exception {
+    Path tempDir = Files.createTempDirectory("tests");
+    tempDir.toFile().deleteOnExit();
+
+    String dbPath = tempDir.toString();
+    ProjectsRepository repo = new ProjectsRepository(dbPath);
+    repo.initTables();
+
+    Instant now = Instant.now();
+
+    repo.insertDefaultProjectIfNoneExists(defaultProjectData);
+    ProjectDb project = repo.createProject(ProjectData.of("Project with Tasks", now));
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
+
+    TaskData task = TaskData.of("Task 1", false, TaskPriority.MEDIUM, now, null, null);
+    taskRepo.createTask(task, project.getId());
+    taskRepo.createTask(task, project.getId());
+
+    assertEquals(2, taskRepo.countTasks());
+
+    repo.removeProject(project.getId());
+
+    assertEquals(0, taskRepo.countTasks());
   }
 }

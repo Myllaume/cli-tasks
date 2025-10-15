@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Objects;
 import task.cli.myllaume.ProjectData;
 import task.cli.myllaume.ProjectDb;
 import task.cli.myllaume.UnknownProjectException;
@@ -168,22 +169,26 @@ public class ProjectsRepository extends DatabaseRepository {
   }
 
   public ProjectDb removeProject(int id) throws Exception {
-    String deleteSql = "DELETE FROM projects WHERE id = ?";
+    ProjectDb currentProject = getCurrentProject();
+    Objects.requireNonNull(currentProject, "Current project cannot be null to delete a project");
 
-    ProjectDb project = getProject(id);
-    if (project == null) {
-      throw new UnknownProjectException(id);
+    if (id == currentProject.getId()) {
+      throw new IllegalStateException("Cannot delete the current project");
     }
+
+    String deleteSql = "DELETE FROM projects WHERE id = ? RETURNING id, name, fulltext, created_at";
 
     try (Connection conn = getConnection();
         PreparedStatement deletePstmt = conn.prepareStatement(deleteSql)) {
 
       deletePstmt.setInt(1, id);
-      int affected = deletePstmt.executeUpdate();
-      if (affected == 0) {
-        throw new IllegalArgumentException("Cannot find project was about to delete");
+      try (ResultSet rs = deletePstmt.executeQuery()) {
+        if (rs.next()) {
+          return ProjectDb.fromSqlResult(rs);
+        } else {
+          throw new UnknownProjectException(id);
+        }
       }
-      return project;
     }
   }
 

@@ -115,22 +115,20 @@ public class TaskRepositorySqlite extends DatabaseRepository {
   }
 
   public Task removeTask(int id) throws Exception {
-    String deleteSql = "DELETE FROM tasks WHERE id = ?";
-
-    Task task = getTask(id);
-    if (task == null) {
-      throw new UnknownTaskException(id);
-    }
+    String deleteSql =
+        "DELETE FROM tasks WHERE id = ? RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at";
 
     try (Connection conn = getConnection();
         PreparedStatement deletePstmt = conn.prepareStatement(deleteSql)) {
 
       deletePstmt.setInt(1, id);
-      int affected = deletePstmt.executeUpdate();
-      if (affected == 0) {
-        throw new IllegalArgumentException("Cannot find task was about to delete");
+      try (ResultSet rs = deletePstmt.executeQuery()) {
+        if (rs.next()) {
+          return Task.fromSqlResult(rs);
+        } else {
+          throw new UnknownTaskException(id);
+        }
       }
-      return task;
     }
   }
 

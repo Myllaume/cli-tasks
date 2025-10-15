@@ -22,23 +22,22 @@ public class ProjectsRepository extends DatabaseRepository {
         """
         INSERT INTO projects (name, fulltext, created_at)
         VALUES (?, ?, ?)
+        RETURNING id, name, fulltext, created_at
         """;
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       String fulltext = StringUtils.normalizeString(data.getName());
 
       pstmt.setString(1, data.getName());
       pstmt.setString(2, fulltext);
       pstmt.setLong(3, data.getCreatedAt().getEpochSecond());
-      pstmt.executeUpdate();
 
-      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+      try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          int id = rs.getInt(1);
-          return getProject(id);
+          return ProjectDb.fromSqlResult(rs);
         } else {
-          throw new SQLException("Impossible de récupérer l'ID généré.");
+          throw new SQLException("Impossible de récupérer le projet créé.");
         }
       }
     }
@@ -50,9 +49,10 @@ public class ProjectsRepository extends DatabaseRepository {
         INSERT INTO projects (name, fulltext, created_at, is_current)
         SELECT ?, ?, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM projects)
+        RETURNING id, name, fulltext, created_at
         """;
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       String fulltext = StringUtils.normalizeString(data.getName());
 
@@ -60,19 +60,13 @@ public class ProjectsRepository extends DatabaseRepository {
       pstmt.setString(2, fulltext);
       pstmt.setLong(3, data.getCreatedAt().getEpochSecond());
       pstmt.setInt(4, 1);
-      int rowsAffected = pstmt.executeUpdate();
 
-      if (rowsAffected == 0) {
-        throw new IllegalStateException(
-            "Impossible de créer le projet par défaut : un projet existe déjà.");
-      }
-
-      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+      try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          int id = rs.getInt(1);
-          return getProject(id);
+          return ProjectDb.fromSqlResult(rs);
         } else {
-          throw new SQLException("Impossible de récupérer l'ID généré.");
+          throw new IllegalStateException(
+              "Impossible de créer le projet par défaut : un projet existe déjà.");
         }
       }
     }
@@ -123,7 +117,8 @@ public class ProjectsRepository extends DatabaseRepository {
 
   public ProjectDb updateCurrentProject(int id) throws Exception {
     String clearSql = "UPDATE projects SET is_current = 0 WHERE is_current = 1";
-    String setSql = "UPDATE projects SET is_current = 1 WHERE id = ?";
+    String setSql =
+        "UPDATE projects SET is_current = 1 WHERE id = ? RETURNING id, name, fulltext, created_at";
 
     try (Connection conn = getConnection()) {
       conn.setAutoCommit(false);
@@ -134,14 +129,17 @@ public class ProjectsRepository extends DatabaseRepository {
         clearPstmt.executeUpdate();
 
         setPstmt.setInt(1, id);
-        int affected = setPstmt.executeUpdate();
-        if (affected != 1) {
-          throw new IllegalArgumentException("Cannot find project was about to set as current");
+        ProjectDb result;
+        try (ResultSet rs = setPstmt.executeQuery()) {
+          if (rs.next()) {
+            result = ProjectDb.fromSqlResult(rs);
+          } else {
+            throw new IllegalArgumentException("Cannot find project was about to set as current");
+          }
         }
 
         conn.commit();
-
-        return getCurrentProject();
+        return result;
       } catch (Exception e) {
         conn.rollback();
         throw e;
@@ -236,24 +234,23 @@ public class ProjectsRepository extends DatabaseRepository {
   }
 
   public ProjectDb updateProjectName(int id, String name) throws Exception {
-    ProjectDb existingProject = getProject(id);
-
-    if (existingProject == null) {
-      throw new UnknownProjectException(id);
-    }
-
     String fulltext = StringUtils.normalizeString(name);
 
-    String sql = "UPDATE projects SET name = ?, fulltext = ? WHERE id = ?";
+    String sql =
+        "UPDATE projects SET name = ?, fulltext = ? WHERE id = ? RETURNING id, name, fulltext, created_at";
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, name);
       pstmt.setString(2, fulltext);
       pstmt.setInt(3, id);
-      pstmt.executeUpdate();
-
-      return getProject(id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return ProjectDb.fromSqlResult(rs);
+        } else {
+          throw new UnknownProjectException(id);
+        }
+      }
     }
   }
 

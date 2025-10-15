@@ -19,21 +19,20 @@ public class TimelogsRepository extends DatabaseRepository {
         """
         INSERT INTO timelogs (task_id, started_at, stopped_at)
         VALUES (?, ?, ?)
+        RETURNING id, task_id, started_at, stopped_at
         """;
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setInt(1, data.getTaskId());
       pstmt.setLong(2, data.getStartedAt().getEpochSecond());
       pstmt.setLong(3, data.getStoppedAt().getEpochSecond());
-      pstmt.executeUpdate();
 
-      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+      try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          int id = rs.getInt(1);
-          return getTimelog(id);
+          return TimelogDb.fromSqlResult(rs);
         } else {
-          throw new SQLException("Impossible de récupérer l'ID généré.");
+          throw new SQLException("Impossible de récupérer le timelog créé.");
         }
       }
     }

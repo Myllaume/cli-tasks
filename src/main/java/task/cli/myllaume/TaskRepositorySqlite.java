@@ -25,9 +25,10 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         """
         INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, project_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at
         """;
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       String fulltext = StringUtils.normalizeString(data.getDescription());
 
@@ -47,14 +48,12 @@ public class TaskRepositorySqlite extends DatabaseRepository {
       }
       pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
       pstmt.setLong(8, projectId);
-      pstmt.executeUpdate();
 
-      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+      try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          int id = rs.getInt(1);
-          return getTask(id);
+          return Task.fromSqlResult(rs);
         } else {
-          throw new SQLException("Impossible de récupérer l'ID généré.");
+          throw new SQLException("Impossible de récupérer la tâche créée.");
         }
       }
     } catch (SQLException e) {
@@ -71,9 +70,10 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         """
         INSERT INTO tasks (name, completed, fulltext, priority, due_at, done_at, created_at, parent_id, project_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT project_id FROM tasks WHERE id = ?))
+        RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at
         """;
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       String fulltext = StringUtils.normalizeString(data.getDescription());
 
@@ -94,14 +94,12 @@ public class TaskRepositorySqlite extends DatabaseRepository {
       pstmt.setLong(7, data.getCreatedAt().getEpochSecond());
       pstmt.setInt(8, parentId);
       pstmt.setInt(9, parentId);
-      pstmt.executeUpdate();
 
-      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+      try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          int id = rs.getInt(1);
-          return getTask(id);
+          return Task.fromSqlResult(rs);
         } else {
-          throw new SQLException("Impossible de récupérer l'ID généré.");
+          throw new SQLException("Impossible de récupérer la sous-tâche créée.");
         }
       }
     } catch (SQLException e) {
@@ -334,35 +332,37 @@ public class TaskRepositorySqlite extends DatabaseRepository {
   }
 
   public Task updateTaskName(int id, String name) throws Exception {
-    Task existingTask = getTask(id);
-
-    if (existingTask == null) {
-      throw new UnknownTaskException(id);
-    }
-
     String fulltext = StringUtils.normalizeString(name);
 
-    String sql = "UPDATE tasks SET name = ?, fulltext = ? WHERE id = ?";
+    String sql =
+        """
+        UPDATE tasks SET name = ?, fulltext = ?
+        WHERE id = ?
+        RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, name);
       pstmt.setString(2, fulltext);
       pstmt.setInt(3, id);
-      pstmt.executeUpdate();
-
-      return getTask(id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return Task.fromSqlResult(rs);
+        } else {
+          throw new UnknownTaskException(id);
+        }
+      }
     }
   }
 
   public Task updateTaskCompleted(int id, boolean completed) throws Exception {
-    Task existingTask = getTask(id);
-
-    if (existingTask == null) {
-      throw new UnknownTaskException(id);
-    }
-
-    String sql = "UPDATE tasks SET completed = ?, done_at = ? WHERE id = ?";
+    String sql =
+        """
+        UPDATE tasks SET completed = ?, done_at = ?
+        WHERE id = ?
+        RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -373,39 +373,45 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         pstmt.setNull(2, java.sql.Types.INTEGER);
       }
       pstmt.setInt(3, id);
-      pstmt.executeUpdate();
-
-      return getTask(id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return Task.fromSqlResult(rs);
+        } else {
+          throw new UnknownTaskException(id);
+        }
+      }
     }
   }
 
   public Task updateTaskPriority(int id, TaskPriority priority) throws Exception {
-    Task existingTask = getTask(id);
-
-    if (existingTask == null) {
-      throw new UnknownTaskException(id);
-    }
-
-    String sql = "UPDATE tasks SET priority = ? WHERE id = ?";
+    String sql =
+        """
+        UPDATE tasks SET priority = ?
+        WHERE id = ?
+        RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setInt(1, priority.getLevel());
       pstmt.setInt(2, id);
-      pstmt.executeUpdate();
-
-      return getTask(id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return Task.fromSqlResult(rs);
+        } else {
+          throw new UnknownTaskException(id);
+        }
+      }
     }
   }
 
   public Task updateTaskDueDate(int id, Instant dueDate) throws Exception {
-    Task existingTask = getTask(id);
-
-    if (existingTask == null) {
-      throw new UnknownTaskException(id);
-    }
-
-    String sql = "UPDATE tasks SET due_at = ? WHERE id = ?";
+    String sql =
+        """
+        UPDATE tasks SET due_at = ?
+        WHERE id = ?
+        RETURNING id, name, completed, fulltext, priority, created_at, due_at, done_at
+        """;
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -415,9 +421,13 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         pstmt.setLong(1, dueDate.getEpochSecond());
       }
       pstmt.setInt(2, id);
-      pstmt.executeUpdate();
-
-      return getTask(id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return Task.fromSqlResult(rs);
+        } else {
+          throw new UnknownTaskException(id);
+        }
+      }
     }
   }
 

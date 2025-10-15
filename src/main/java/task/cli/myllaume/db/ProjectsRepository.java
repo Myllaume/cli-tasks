@@ -209,8 +209,15 @@ public class ProjectsRepository extends DatabaseRepository {
     }
   }
 
-  private ArrayList<ProjectDb> searchProjectsProcess(String keyword, int limit, String sql)
-      throws Exception {
+  public ArrayList<ProjectDb> searchProjects(String keyword, int limit) throws Exception {
+    String sql =
+        """
+        SELECT id, name, fulltext, created_at
+        FROM projects
+        WHERE fulltext LIKE ?
+        ORDER BY name ASC LIMIT ?
+        """;
+
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -226,17 +233,6 @@ public class ProjectsRepository extends DatabaseRepository {
         return projects;
       }
     }
-  }
-
-  public ArrayList<ProjectDb> searchProjects(String keyword, int limit) throws Exception {
-    String sql =
-        """
-        SELECT id, name, fulltext, created_at
-        FROM projects
-        WHERE fulltext LIKE ?
-        ORDER BY name ASC LIMIT ?
-        """;
-    return searchProjectsProcess(keyword, limit, sql);
   }
 
   public ProjectDb updateProjectName(int id, String name) throws Exception {
@@ -261,7 +257,9 @@ public class ProjectsRepository extends DatabaseRepository {
     }
   }
 
-  private int executeCountQuery(String sql) throws Exception {
+  public int countProjects() throws Exception {
+    String sql = "SELECT COUNT(*) AS total FROM projects";
+
     try (Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(sql)) {
@@ -272,10 +270,6 @@ public class ProjectsRepository extends DatabaseRepository {
         return 0;
       }
     }
-  }
-
-  public int countProjects() throws Exception {
-    return executeCountQuery("SELECT COUNT(*) AS total FROM projects");
   }
 
   public boolean isEmpty() throws Exception {

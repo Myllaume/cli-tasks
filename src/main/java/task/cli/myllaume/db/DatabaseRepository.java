@@ -29,6 +29,7 @@ public abstract class DatabaseRepository {
       try (Statement stmt = conn.createStatement()) {
         createTasksTable(stmt);
         createProjectsTable(stmt);
+        createTimelogsTable(stmt);
 
         stmt.execute("ANALYZE");
       }
@@ -64,6 +65,19 @@ public abstract class DatabaseRepository {
             fulltext TEXT NOT NULL,
             created_at INTEGER NOT NULL,
             is_current INTEGER NOT NULL DEFAULT 0
+        )
+        """);
+  }
+
+  private void createTimelogsTable(Statement stmt) throws SQLException {
+    stmt.execute(
+        """
+        CREATE TABLE IF NOT EXISTS timelogs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            started_at INTEGER NOT NULL,
+            stopped_at INTEGER NOT NULL,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
         """);
   }

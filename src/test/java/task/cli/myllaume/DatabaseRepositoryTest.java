@@ -201,8 +201,11 @@ public class DatabaseRepositoryTest {
       assertTrue("Should have 'tasks' table", rsAllAppTables.next());
       assertEquals("tasks", rsAllAppTables.getString("name"));
 
+      assertTrue("Should have 'timelogs' table", rsAllAppTables.next());
+      assertEquals("timelogs", rsAllAppTables.getString("name"));
+
       // Vérifier qu'il n'y a pas d'autres tables
-      assertFalse("Should not have more than 2 application tables", rsAllAppTables.next());
+      assertFalse("Should not have more than 3 application tables", rsAllAppTables.next());
     }
   }
 }

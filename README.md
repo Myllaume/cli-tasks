@@ -72,3 +72,30 @@ java -jar java-cli-tasks-1.0-SNAPSHOT.jar --version
 mvn spotless:check
 mvn spotless:apply
 ```
+
+### Installation sous Ubuntu
+
+1. Écrire le fichier executé à la commande "task" avec Nano.
+
+```bash
+sudo nano /usr/local/bin/task
+```
+
+On note dans le fichier:
+
+```bash
+#!/bin/bash
+java -jar ~/../cli-tasks/target/java-cli-tasks-1.0-SNAPSHOT.jar "$@"
+```
+
+2. Rendre le script exécutable
+
+```bash
+sudo chmod +x /usr/local/bin/task
+```
+
+3. Vérifier
+
+```bash
+task --help
+```

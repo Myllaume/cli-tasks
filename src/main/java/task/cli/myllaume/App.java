@@ -53,6 +53,8 @@ public class App implements Runnable {
       cmd.addSubcommand("remove", commandRemove);
       CommandDone commandDone = new CommandDone(tasksRepo);
       cmd.addSubcommand("done", commandDone);
+      CommandGui commandGui = new CommandGui();
+      cmd.addSubcommand("gui", commandGui);
 
       int exitCode = cmd.execute(args);
       System.exit(exitCode);

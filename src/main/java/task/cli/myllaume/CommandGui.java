@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.awt.Desktop;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -44,6 +45,10 @@ public class CommandGui implements Runnable {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
               String path = exchange.getRequestURI().getPath();
+
+               if (path.equals("/styles.css")) {
+                  serveStaticFile(exchange, path);
+                }
 
               String response;
 
@@ -139,5 +144,50 @@ public class CommandGui implements Runnable {
         <body><h1>500 - Serveur error</h1></body>
         </html>
         """;
+  }
+
+  private void serveStaticFile(HttpExchange exchange, String path) throws IOException {
+    // // Sécurité : valider et normaliser le chemin
+    // if (!path.startsWith("/static/")) {
+    //     serve404(exchange);
+    //     return;
+    // }
+
+    // // Enlever le préfixe /static/ et normaliser
+    // String relativePath = path.substring("/static/".length());
+
+    // // Bloquer les tentatives de path traversal
+    // if (relativePath.contains("..") || relativePath.contains("//") ||
+    // relativePath.startsWith("/")) {
+    //     serve404(exchange);
+    //     return;
+    // }
+
+    // // Construire le chemin complet dans les resources
+    // String resourcePath = "static/" + relativePath;
+
+    try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
+      if (is == null) {
+        serve404(exchange);
+        return;
+      }
+
+      byte[] content = is.readAllBytes();
+      String contentType = getContentType(path);
+
+      sendResponse(exchange, 200, contentType, content);
+    }
+  }
+
+  private String getContentType(String path) {
+    if (path.endsWith(".css")) return "text/css; charset=UTF-8";
+    if (path.endsWith(".js")) return "application/javascript; charset=UTF-8";
+    if (path.endsWith(".html")) return "text/html; charset=UTF-8";
+    // if (path.endsWith(".json")) return "application/json; charset=UTF-8";
+    // if (path.endsWith(".png")) return "image/png";
+    // if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
+    // if (path.endsWith(".svg")) return "image/svg+xml";
+    // if (path.endsWith(".ico")) return "image/x-icon";
+    throw new IllegalStateException("Unsupported content.");
   }
 }

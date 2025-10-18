@@ -57,6 +57,8 @@ public class App implements Runnable {
       cmd.addSubcommand("clear", CommandClear);
       CommandImport commandImport = new CommandImport(manager);
       cmd.addSubcommand("import", commandImport);
+      CommandGui commandGui = new CommandGui();
+      cmd.addSubcommand("gui", commandGui);
 
       int exitCode = cmd.execute(args);
       System.exit(exitCode);

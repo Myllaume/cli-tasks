@@ -6,7 +6,11 @@ import task.cli.myllaume.config.AppConfigRepository;
 import task.cli.myllaume.db.ProjectsRepository;
 import task.cli.myllaume.db.TaskManager;
 
-@Command(name = "tasks", mixinStandardHelpOptions = true, description = "Gestion des tâches en CLI")
+@Command(
+    name = "tasks",
+    mixinStandardHelpOptions = true,
+    description = "Gestion des tâches en CLI",
+    version = "0.1.0-alpha.1")
 public class App implements Runnable {
   @Override
   public void run() {

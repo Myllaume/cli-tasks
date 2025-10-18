@@ -18,9 +18,10 @@ public class App implements Runnable {
 
       AppDirs appDirs = new AppDirs();
       String dataDir = appDirs.getDataDir();
+      String configDir = appDirs.getConfigDir();
 
       ProjectsRepository projectsRepository = new ProjectsRepository(dataDir);
-      AppState appState = new AppState(new AppConfigRepository(dataDir), projectsRepository);
+      AppState appState = new AppState(new AppConfigRepository(configDir), projectsRepository);
 
       try {
         if (appState.isFirstLaunch()) {

@@ -8,13 +8,18 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.ArrayList;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = "gui", description = "Use graphical interface")
 public class CommandGui implements Runnable {
 
-  public CommandGui() {}
+  private final TaskRepositorySqlite repo;
+
+  public CommandGui(TaskRepositorySqlite repo) {
+    this.repo = repo;
+  }
 
   @CommandLine.Option(
       names = {"-p", "--port"},
@@ -42,10 +47,14 @@ public class CommandGui implements Runnable {
 
               String response;
 
-              if (path.equals("/")) {
-                response = htmlHome();
-              } else {
-                response = html404();
+              try {
+                if (path.equals("/")) {
+                  response = htmlHome();
+                } else {
+                  response = html404();
+                }
+              } catch (Exception e) {
+                response = htmlError();
               }
 
               exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
@@ -85,7 +94,14 @@ public class CommandGui implements Runnable {
     }
   }
 
-  private String htmlHome() {
+  private String htmlHome() throws Exception {
+    ArrayList<Task> tasks = repo.getTasks(100);
+
+    StringBuilder listItems = new StringBuilder();
+    for (Task item : tasks) {
+      listItems.append("<li>").append((item.getDescription())).append("</li>");
+    }
+
     return """
         <!DOCTYPE html>
         <html>
@@ -97,11 +113,12 @@ public class CommandGui implements Runnable {
           <div class="container">
             <h1>Hello World!</h1>
             <p>Serveur lancé sur le port %s</p>
+            <ul>%s</ul>
           </div>
         </body>
         </html>
         """
-        .formatted(port);
+        .formatted(port, listItems);
   }
 
   private String html404() {
@@ -110,6 +127,16 @@ public class CommandGui implements Runnable {
         <html>
         <head><title>404 Not Found</title></head>
         <body><h1>404 - Page non trouvée</h1></body>
+        </html>
+        """;
+  }
+
+  private String htmlError() {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head><title>Error</title></head>
+        <body><h1>500 - Serveur error</h1></body>
         </html>
         """;
   }

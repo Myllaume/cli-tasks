@@ -38,23 +38,15 @@ public class CommandGui implements Runnable {
           new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
-              String response =
-                  """
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta charset="UTF-8">
-                    <title>Tasks</title>
-                  </head>
-                  <body>
-                    <div class="container">
-                      <h1>Hello World!</h1>
-                      <p>Serveur lancé sur le port %s</p>
-                    </div>
-                  </body>
-                  </html>
-                  """
-                      .formatted(port);
+              String path = exchange.getRequestURI().getPath();
+
+              String response;
+
+              if (path.equals("/")) {
+                response = htmlHome();
+              } else {
+                response = html404();
+              }
 
               exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
               exchange.sendResponseHeaders(200, response.getBytes().length);
@@ -91,5 +83,34 @@ public class CommandGui implements Runnable {
     } catch (Exception e) {
       System.err.println("Erreur lors du démarrage du serveur: " + e.getMessage());
     }
+  }
+
+  private String htmlHome() {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Tasks</title>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Hello World!</h1>
+            <p>Serveur lancé sur le port %s</p>
+          </div>
+        </body>
+        </html>
+        """
+        .formatted(port);
+  }
+
+  private String html404() {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head><title>404 Not Found</title></head>
+        <body><h1>404 - Page non trouvée</h1></body>
+        </html>
+        """;
   }
 }

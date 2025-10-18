@@ -1,7 +1,6 @@
 package task.cli.myllaume;
 
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.awt.Desktop;
 import java.io.IOException;
@@ -10,8 +9,10 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Set;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import task.cli.myllaume.utils.StringUtils;
 
 @Command(name = "gui", description = "Use graphical interface")
 public class CommandGui implements Runnable {
@@ -36,41 +37,8 @@ public class CommandGui implements Runnable {
   @Override
   public void run() {
     try {
-
       HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-
-      server.createContext(
-          "/",
-          new HttpHandler() {
-            @Override
-            public void handle(HttpExchange exchange) throws IOException {
-              String path = exchange.getRequestURI().getPath();
-
-               if (path.equals("/styles.css")) {
-                  serveStaticFile(exchange, path);
-                }
-
-              String response;
-
-              try {
-                if (path.equals("/")) {
-                  response = htmlHome();
-                } else {
-                  response = html404();
-                }
-              } catch (Exception e) {
-                response = htmlError();
-              }
-
-              exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
-              exchange.sendResponseHeaders(200, response.getBytes().length);
-
-              try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response.getBytes());
-              }
-            }
-          });
-
+      server.createContext("/", this::handleRequest);
       server.start();
 
       String url = "http://localhost:" + port;
@@ -81,7 +49,7 @@ public class CommandGui implements Runnable {
           .addShutdownHook(
               new Thread(
                   () -> {
-                    System.out.println("\nArrêt du serveur...");
+                    System.out.println("\nArrêt du serveur…");
                     server.stop(0);
                   }));
 
@@ -99,12 +67,36 @@ public class CommandGui implements Runnable {
     }
   }
 
+  private void handleRequest(HttpExchange exchange) throws IOException {
+    String path = exchange.getRequestURI().getPath();
+
+    try {
+      if (Set.of("/styles.css", "/script.js").contains(path)) {
+        serveStaticFile(exchange, path);
+        return;
+      }
+
+      if (path.equals("/")) {
+        String response = htmlHome();
+        sendResponse(exchange, 200, "text/html; charset=UTF-8", response.getBytes());
+        return;
+      }
+
+      String response = html404();
+      sendResponse(exchange, 404, "text/html; charset=UTF-8", response.getBytes());
+    } catch (Exception e) {
+      String response = htmlError();
+      sendResponse(exchange, 500, "text/html; charset=UTF-8", response.getBytes());
+    }
+  }
+
   private String htmlHome() throws Exception {
     ArrayList<Task> tasks = repo.getTasks(100);
 
     StringBuilder listItems = new StringBuilder();
     for (Task item : tasks) {
-      listItems.append("<li>").append((item.getDescription())).append("</li>");
+      String desc = StringUtils.escapeHtml(item.getDescription());
+      listItems.append("<li>").append(desc).append("</li>");
     }
 
     return """
@@ -113,6 +105,7 @@ public class CommandGui implements Runnable {
         <head>
           <meta charset="UTF-8">
           <title>Tasks</title>
+          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <div class="container">
@@ -126,49 +119,43 @@ public class CommandGui implements Runnable {
         .formatted(port, listItems);
   }
 
-  private String html404() {
-    return """
-        <!DOCTYPE html>
-        <html>
-        <head><title>404 Not Found</title></head>
-        <body><h1>404 - Page non trouvée</h1></body>
-        </html>
-        """;
-  }
-
   private String htmlError() {
     return """
         <!DOCTYPE html>
         <html>
-        <head><title>Error</title></head>
-        <body><h1>500 - Serveur error</h1></body>
+        <head>
+          <meta charset="UTF-8">
+          <title>Erreur</title>
+          <link rel="stylesheet" href="styles.css">
+        </head>
+        <body>
+          <h1>500 - Erreur serveur</h1>
+          <p>Une erreur s'est produite lors du traitement de votre requête.</p>
+        </body>
+        </html>
+        """;
+  }
+
+  private String html404() {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>404 Not Found</title>
+          <link rel="stylesheet" href="styles.css">
+        </head>
+        <body>
+          <h1>404 - Page non trouvée</h1>
+        </body>
         </html>
         """;
   }
 
   private void serveStaticFile(HttpExchange exchange, String path) throws IOException {
-    // // Sécurité : valider et normaliser le chemin
-    // if (!path.startsWith("/static/")) {
-    //     serve404(exchange);
-    //     return;
-    // }
-
-    // // Enlever le préfixe /static/ et normaliser
-    // String relativePath = path.substring("/static/".length());
-
-    // // Bloquer les tentatives de path traversal
-    // if (relativePath.contains("..") || relativePath.contains("//") ||
-    // relativePath.startsWith("/")) {
-    //     serve404(exchange);
-    //     return;
-    // }
-
-    // // Construire le chemin complet dans les resources
-    // String resourcePath = "static/" + relativePath;
-
-    try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
+    try (InputStream is = getClass().getClassLoader().getResourceAsStream(path.substring(1))) {
       if (is == null) {
-        serve404(exchange);
+        sendResponse(exchange, 404, "text/html; charset=UTF-8", html404().getBytes());
         return;
       }
 
@@ -179,15 +166,19 @@ public class CommandGui implements Runnable {
     }
   }
 
+  private void sendResponse(
+      HttpExchange exchange, int statusCode, String contentType, byte[] content)
+      throws IOException {
+    exchange.getResponseHeaders().set("Content-Type", contentType);
+    exchange.sendResponseHeaders(statusCode, content.length);
+    try (OutputStream os = exchange.getResponseBody()) {
+      os.write(content);
+    }
+  }
+
   private String getContentType(String path) {
     if (path.endsWith(".css")) return "text/css; charset=UTF-8";
     if (path.endsWith(".js")) return "application/javascript; charset=UTF-8";
-    if (path.endsWith(".html")) return "text/html; charset=UTF-8";
-    // if (path.endsWith(".json")) return "application/json; charset=UTF-8";
-    // if (path.endsWith(".png")) return "image/png";
-    // if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
-    // if (path.endsWith(".svg")) return "image/svg+xml";
-    // if (path.endsWith(".ico")) return "image/x-icon";
     throw new IllegalStateException("Unsupported content.");
   }
 }

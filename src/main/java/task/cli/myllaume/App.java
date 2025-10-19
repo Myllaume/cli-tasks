@@ -53,6 +53,8 @@ public class App implements Runnable {
       cmd.addSubcommand("remove", commandRemove);
       CommandDone commandDone = new CommandDone(tasksRepo);
       cmd.addSubcommand("done", commandDone);
+      CommandClear CommandClear = new CommandClear(projectsRepository);
+      cmd.addSubcommand("clear", CommandClear);
       CommandImport commandImport = new CommandImport(manager);
       cmd.addSubcommand("import", commandImport);
 

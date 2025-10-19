@@ -1,6 +1,5 @@
 package task.cli.myllaume;
 
-import java.time.Instant;
 import task.cli.myllaume.config.AppConfigRepository;
 import task.cli.myllaume.db.ProjectsRepository;
 
@@ -41,8 +40,7 @@ public class AppState {
 
     try {
       config.init();
-      ProjectData defaultProjectData = ProjectData.of("default", Instant.now());
-      projectsRepository.insertDefaultProjectIfNoneExists(defaultProjectData);
+      projectsRepository.insertDefaultProjectIfNoneExists(ProjectsRepository.defaultProjectData);
     } catch (Exception e) {
       throw new IllegalStateException(
           "First launch setup failed. The application may be in an inconsistent state. "

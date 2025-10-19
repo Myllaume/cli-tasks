@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Objects;
 import task.cli.myllaume.ProjectData;
@@ -13,6 +14,9 @@ import task.cli.myllaume.UnknownProjectException;
 import task.cli.myllaume.utils.StringUtils;
 
 public class ProjectsRepository extends DatabaseRepository {
+
+  public static ProjectData defaultProjectData = ProjectData.of("default", Instant.now());
+
   public ProjectsRepository(String dbPath) {
     super(dbPath);
   }

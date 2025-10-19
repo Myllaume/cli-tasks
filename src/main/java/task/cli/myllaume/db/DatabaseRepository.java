@@ -82,6 +82,22 @@ public abstract class DatabaseRepository {
         """);
   }
 
+  public void dropTables() throws SQLException {
+    try (Connection conn = getConnection()) {
+      try (Statement stmt = conn.createStatement()) {
+
+        stmt.execute("PRAGMA foreign_keys = OFF");
+
+        stmt.execute("DROP TABLE IF EXISTS timelogs");
+        stmt.execute("DROP TABLE IF EXISTS tasks");
+        stmt.execute("DROP TABLE IF EXISTS projects");
+
+      } catch (SQLException e) {
+        throw new SQLException("Error while dropping tables: " + e.getMessage(), e);
+      }
+    }
+  }
+
   public String getUrl() {
     return this.url;
   }

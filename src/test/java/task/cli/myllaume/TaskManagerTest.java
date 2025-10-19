@@ -21,12 +21,10 @@ public class TaskManagerTest {
     TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     projectsRepo.initTables();
 
-    // Créer un projet par défaut et le définir comme projet courant
     projectsRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskManager taskManager = new TaskManager(taskRepo, projectsRepo);
 
-    // Créer une tâche
     Instant now = Instant.now();
     Instant dueDate = now.plusSeconds(86400);
     TaskData taskData = TaskData.of("Test Task", false, TaskPriority.MEDIUM, now, dueDate, null);
@@ -52,7 +50,6 @@ public class TaskManagerTest {
 
     TaskManager taskManager = new TaskManager(taskRepo, projectsRepo);
 
-    // Tenter de créer une tâche sans projet courant
     Instant now = Instant.now();
     TaskData taskData = TaskData.of("Test Task", false, TaskPriority.MEDIUM, now, null, null);
 
@@ -74,12 +71,10 @@ public class TaskManagerTest {
     TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     projectsRepo.initTables();
 
-    // Créer un projet par défaut
     projectsRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskManager taskManager = new TaskManager(taskRepo, projectsRepo);
 
-    // Créer plusieurs tâches
     Instant now = Instant.now();
     Task task1 =
         taskManager.createTaskOnCurrentProject(
@@ -142,22 +137,18 @@ public class TaskManagerTest {
     TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     projectsRepo.initTables();
 
-    // Créer deux projets
     projectsRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Project 1", Instant.now()));
     ProjectDb project2 = projectsRepo.createProject(ProjectData.of("Project 2", Instant.now()));
 
     TaskManager taskManager = new TaskManager(taskRepo, projectsRepo);
 
-    // Créer une tâche sur le projet 1
     Instant now = Instant.now();
     Task task1 =
         taskManager.createTaskOnCurrentProject(
             TaskData.of("Task 1", false, TaskPriority.MEDIUM, now, null, null));
 
-    // Changer de projet courant
     projectsRepo.updateCurrentProject(project2.getId());
 
-    // Créer une tâche sur le projet 2
     Task task2 =
         taskManager.createTaskOnCurrentProject(
             TaskData.of("Task 2", false, TaskPriority.HIGH, now, null, null));
@@ -176,16 +167,12 @@ public class TaskManagerTest {
     ProjectsRepository projectsRepo = new ProjectsRepository(dbPath);
     TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
 
-    // Ne pas appeler initTables manuellement sur projectsRepo
-    // TaskManager devrait le faire
-    projectsRepo.initTables(); // Mais on doit initialiser les tables de projectsRepo d'abord
+    projectsRepo.initTables();
 
     projectsRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
-    // TaskManager appelle initTables dans son constructeur pour taskRepo
     TaskManager taskManager = new TaskManager(taskRepo, projectsRepo);
 
-    // Si aucune exception n'est levée, les tables ont été initialisées correctement
     Instant now = Instant.now();
     Task task =
         taskManager.createTaskOnCurrentProject(

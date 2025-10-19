@@ -185,11 +185,12 @@ public class TaskRepositorySqliteTest {
     String dbPath = tempDir.toString() + "/";
     TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
-    TaskManager manager = getManager(dbPath);
+    ProjectsRepository repoProjects = new ProjectsRepository(dbPath);
+    ProjectDb project = repoProjects.createProject(defaultProject);
 
-    manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
-    int count = repo.countTasks();
+    int count = repo.importFromCsv("src/test/resources/many.csv", project.getId());
     assertEquals(52, count);
+    assertEquals(52, repo.countTasks());
   }
 
   @Test
@@ -202,13 +203,11 @@ public class TaskRepositorySqliteTest {
     ProjectsRepository repoProjects = new ProjectsRepository(tempDir.toString());
     repoProjects.initTables();
     ProjectDb project = repoProjects.createProject(defaultProject);
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    TaskRepositorySqlite repoTasks = new TaskRepositorySqlite(tempDir.toString());
+    repoTasks.initTables();
 
-    int count = repo.importFromCsv(importedFile.getAbsolutePath(), project.getId());
-
-    assertEquals(52, count);
-
-    repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
+    repoTasks.importFromCsv(importedFile.getAbsolutePath(), project.getId());
+    repoTasks.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
 
     assertTrue("Exported file should exist", exportedFile.exists());
 
@@ -228,9 +227,9 @@ public class TaskRepositorySqliteTest {
     tempDir.toFile().deleteOnExit();
 
     String dbPath = tempDir.toString() + "/";
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
+    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
     repo.initTables();
-    TaskManager manager = getManager(tempDir.toString());
+    TaskManager manager = getManager(dbPath);
 
     manager.importFromCsvOnCurrentProject("src/test/resources/many.csv");
     ArrayList<Task> tasks = repo.searchTasks("test", 5);

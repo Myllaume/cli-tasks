@@ -99,3 +99,9 @@ sudo chmod +x /usr/local/bin/task
 ```bash
 task --help
 ```
+
+### E2E
+
+```bash
+task import src/test/resources/e2e.csv
+```

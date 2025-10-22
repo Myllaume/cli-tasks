@@ -57,7 +57,9 @@ public class App implements Runnable {
       cmd.addSubcommand("clear", CommandClear);
       CommandImport commandImport = new CommandImport(manager);
       cmd.addSubcommand("import", commandImport);
-      CommandGui commandGui = new CommandGui(tasksRepo);
+      TaskWebServerFactory serverFactory = new TaskWebServerFactory();
+      BrowserLauncher browserLauncher = new DesktopBrowserLauncher();
+      CommandGui commandGui = new CommandGui(tasksRepo, serverFactory, browserLauncher);
       cmd.addSubcommand("gui", commandGui);
 
       int exitCode = cmd.execute(args);

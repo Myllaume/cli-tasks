@@ -2,6 +2,7 @@ package task.cli.myllaume;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import task.cli.myllaume.db.TaskManager;
 
 @Command(name = "gui", description = "Use graphical interface")
 public class CommandGui implements Runnable {
@@ -9,13 +10,16 @@ public class CommandGui implements Runnable {
   private final TaskRepositorySqlite repository;
   private final TaskWebServerFactory serverFactory;
   private final BrowserLauncher browserLauncher;
+  private final TaskManager taskManager;
 
   public CommandGui(
       TaskRepositorySqlite repository,
       TaskWebServerFactory serverFactory,
+      TaskManager taskManager,
       BrowserLauncher browserLauncher) {
     this.repository = repository;
     this.serverFactory = serverFactory;
+    this.taskManager = taskManager;
     this.browserLauncher = browserLauncher;
   }
 
@@ -33,7 +37,7 @@ public class CommandGui implements Runnable {
   @Override
   public void run() {
     try {
-      WebServer server = serverFactory.create(port, repository);
+      WebServer server = serverFactory.create(port, repository, taskManager);
       server.start();
 
       String url = server.getUrl();

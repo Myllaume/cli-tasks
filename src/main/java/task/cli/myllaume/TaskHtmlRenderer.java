@@ -29,13 +29,36 @@ public class TaskHtmlRenderer {
         <body>
           <div class="container">
             <h1>Hello World!</h1>
-            <p>Serveur lancé sur le port %s</p>
+            <a href="/form">Ajouter une tâche</a>
             <ul>%s</ul>
           </div>
         </body>
         </html>
         """
-        .formatted(port, listItems);
+        .formatted(listItems);
+  }
+
+  public String renderForm() {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Tasks</title>
+          <link rel="stylesheet" href="styles.css">
+        </head>
+        <body>
+          <div class="container">
+            <form method="POST" action="/add-tasks">
+              <label for="description">Description de la tâche :</label>
+              <input type="text" id="description" name="description" required>
+              <input type="submit" value="Ajouter la tâche">
+            </form>
+          </div>
+        </body>
+        </html>
+        """
+        .formatted();
   }
 
   public String render404() {

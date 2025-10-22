@@ -5,15 +5,19 @@ import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import org.junit.After;
 import org.junit.Test;
 import task.cli.myllaume.db.ProjectsRepository;
+import task.cli.myllaume.db.TaskManager;
 
 public class TaskWebServerTest {
 
@@ -29,9 +33,10 @@ public class TaskWebServerTest {
   @Test
   public void testGetUrl() {
     TaskRepositorySqlite mockRepo = mock(TaskRepositorySqlite.class);
+    TaskManager mockManager = mock(TaskManager.class);
     TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
 
-    server = new TaskWebServer(8080, mockRepo, mockRenderer);
+    server = new TaskWebServer(8080, mockRepo, mockRenderer, mockManager);
 
     assertEquals("http://localhost:8080", server.getUrl());
   }
@@ -39,9 +44,10 @@ public class TaskWebServerTest {
   @Test
   public void testGetUrlWithDifferentPort() {
     TaskRepositorySqlite mockRepo = mock(TaskRepositorySqlite.class);
+    TaskManager mockManager = mock(TaskManager.class);
     TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
 
-    server = new TaskWebServer(3000, mockRepo, mockRenderer);
+    server = new TaskWebServer(3000, mockRepo, mockRenderer, mockManager);
 
     assertEquals("http://localhost:3000", server.getUrl());
   }
@@ -49,9 +55,10 @@ public class TaskWebServerTest {
   @Test
   public void testStartCreatesServer() throws Exception {
     TaskRepositorySqlite mockRepo = mock(TaskRepositorySqlite.class);
+    TaskManager mockManager = mock(TaskManager.class);
     TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
 
-    server = new TaskWebServer(8765, mockRepo, mockRenderer);
+    server = new TaskWebServer(8765, mockRepo, mockRenderer, mockManager);
     server.start();
 
     assertNotNull(server);
@@ -60,9 +67,10 @@ public class TaskWebServerTest {
   @Test
   public void testStopDoesNotThrowWhenServerNotStarted() {
     TaskRepositorySqlite mockRepo = mock(TaskRepositorySqlite.class);
+    TaskManager mockManager = mock(TaskManager.class);
     TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
 
-    server = new TaskWebServer(8080, mockRepo, mockRenderer);
+    server = new TaskWebServer(8080, mockRepo, mockRenderer, mockManager);
 
     server.stop(0);
   }
@@ -74,19 +82,20 @@ public class TaskWebServerTest {
     tempDir.toFile().deleteOnExit();
     String dbPath = tempDir.toString();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
 
-    repo.initTables();
+    taskRepo.initTables();
     projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskData taskData =
         TaskData.of(
             "Test task for web server", false, TaskPriority.HIGH, Instant.now(), null, null);
-    repo.createTask(taskData, 1);
+    taskRepo.createTask(taskData, 1);
 
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(9876);
-    server = new TaskWebServer(9876, repo, renderer);
+    server = new TaskWebServer(9876, taskRepo, renderer, taskManager);
 
     server.start();
 
@@ -106,7 +115,6 @@ public class TaskWebServerTest {
 
     assertTrue(content.contains("<!DOCTYPE html>"));
     assertTrue(content.contains("Test task for web server"));
-    assertTrue(content.contains("Serveur lancé sur le port 9876"));
 
     conn.disconnect();
   }
@@ -118,14 +126,15 @@ public class TaskWebServerTest {
     tempDir.toFile().deleteOnExit();
     String dbPath = tempDir.toString();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
 
-    repo.initTables();
+    taskRepo.initTables();
     projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(9877);
-    server = new TaskWebServer(9877, repo, renderer);
+    server = new TaskWebServer(9877, taskRepo, renderer, taskManager);
 
     server.start();
     Thread.sleep(200);
@@ -154,14 +163,15 @@ public class TaskWebServerTest {
     tempDir.toFile().deleteOnExit();
     String dbPath = tempDir.toString();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
 
-    repo.initTables();
+    taskRepo.initTables();
     projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(9878);
-    server = new TaskWebServer(9878, repo, renderer);
+    server = new TaskWebServer(9878, taskRepo, renderer, taskManager);
 
     server.start();
     Thread.sleep(200);
@@ -193,14 +203,15 @@ public class TaskWebServerTest {
     tempDir.toFile().deleteOnExit();
     String dbPath = tempDir.toString();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
 
-    repo.initTables();
+    taskRepo.initTables();
     projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(9880);
-    server = new TaskWebServer(9880, repo, renderer);
+    server = new TaskWebServer(9880, taskRepo, renderer, taskManager);
 
     server.start();
     Thread.sleep(200);
@@ -230,16 +241,17 @@ public class TaskWebServerTest {
     tempDir.toFile().deleteOnExit();
     String dbPath = tempDir.toString();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
 
-    repo.initTables();
+    taskRepo.initTables();
     projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
     when(mockRenderer.renderHome(anyList())).thenReturn("<html><body>MOCKED PAGE</body></html>");
 
-    server = new TaskWebServer(9881, repo, mockRenderer);
+    server = new TaskWebServer(9881, taskRepo, mockRenderer, taskManager);
     server.start();
     Thread.sleep(200);
 
@@ -264,16 +276,17 @@ public class TaskWebServerTest {
     tempDir.toFile().deleteOnExit();
     String dbPath = tempDir.toString();
 
-    TaskRepositorySqlite repo = new TaskRepositorySqlite(dbPath);
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
     ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
 
-    repo.initTables();
+    taskRepo.initTables();
     projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
 
     TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
     when(mockRenderer.render404()).thenReturn("<html><body>MOCKED 404</body></html>");
 
-    server = new TaskWebServer(9882, repo, mockRenderer);
+    server = new TaskWebServer(9882, taskRepo, mockRenderer, taskManager);
     server.start();
     Thread.sleep(200);
 
@@ -293,5 +306,94 @@ public class TaskWebServerTest {
     verify(mockRenderer, times(1)).render404();
 
     conn.disconnect();
+  }
+
+  @Test
+  public void testPostFormDataWithSingleField() throws Exception {
+    Path tempDir = Files.createTempDirectory("test-db");
+    tempDir.toFile().deleteOnExit();
+    String dbPath = tempDir.toString();
+
+    TaskRepositorySqlite taskRepo = new TaskRepositorySqlite(dbPath);
+    ProjectsRepository projectRepo = new ProjectsRepository(dbPath);
+    TaskManager taskManager = new TaskManager(taskRepo, projectRepo);
+
+    taskRepo.initTables();
+    projectRepo.insertDefaultProjectIfNoneExists(ProjectData.of("Default Project", Instant.now()));
+
+    TaskHtmlRenderer renderer = new TaskHtmlRenderer(9883);
+    server = new TaskWebServer(9883, taskRepo, renderer, taskManager);
+    server.start();
+    Thread.sleep(200);
+
+    URI uri = new URI("http://localhost:9883/add-tasks");
+    URL url = uri.toURL();
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setInstanceFollowRedirects(false); // Ne pas suivre automatiquement les redirections
+    conn.setRequestMethod("POST");
+    conn.setDoOutput(true);
+    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+    String formData = "description=Ma+nouvelle+tache";
+    OutputStream os = conn.getOutputStream();
+    os.write(formData.getBytes(StandardCharsets.UTF_8));
+    os.flush();
+    os.close();
+
+    int responseCode = conn.getResponseCode();
+    assertEquals(302, responseCode); // Redirection
+
+    String location = conn.getHeaderField("Location");
+    assertEquals("/", location);
+
+    conn.disconnect();
+
+    List<Task> tasks = taskRepo.getTasks(100);
+    boolean found = false;
+    for (Task task : tasks) {
+      if (task.getDescription().equals("Ma nouvelle tache")) {
+        found = true;
+        break;
+      }
+    }
+    assertTrue("La tâche devrait être créée dans la base de données", found);
+  }
+
+  @Test
+  public void testPostFormDataWithEmptyDescription() throws Exception {
+    TaskRepositorySqlite mockRepo = mock(TaskRepositorySqlite.class);
+    TaskManager mockManager = mock(TaskManager.class);
+    TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
+
+    // Configurer les mocks pour éviter les exceptions
+    when(mockRepo.getTasks(anyInt())).thenReturn(new java.util.ArrayList<>());
+    when(mockRenderer.renderHome(anyList())).thenReturn("<html>Home</html>");
+
+    server = new TaskWebServer(9885, mockRepo, mockRenderer, mockManager);
+    server.start();
+    Thread.sleep(200);
+
+    // Envoyer une requête POST avec une description vide
+    URI uri = new URI("http://localhost:9885/add-tasks");
+    URL url = uri.toURL();
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setInstanceFollowRedirects(false); // Ne pas suivre automatiquement les redirections
+    conn.setRequestMethod("POST");
+    conn.setDoOutput(true);
+    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+    String formData = "description=";
+    OutputStream os = conn.getOutputStream();
+    os.write(formData.getBytes(StandardCharsets.UTF_8));
+    os.flush();
+    os.close();
+
+    int responseCode = conn.getResponseCode();
+    assertEquals(302, responseCode); // Redirection même si vide
+
+    conn.disconnect();
+
+    // Vérifier qu'aucune tâche n'a été créée (le manager ne doit pas être appelé)
+    verify(mockManager, never()).createTaskOnCurrentProject(any(TaskData.class));
   }
 }

@@ -38,6 +38,11 @@ public class TaskHtmlRenderer {
           <div class="container">
             <h1>Hello World!</h1>
             <a href="/form">Ajouter une tâche</a>
+
+            <form method="GET" action="/search" >
+              <input name="keyword" type="search" />
+            </form>
+
             <table>
               <thead>
                 <tr>

@@ -55,8 +55,11 @@ public class TaskWebServer implements WebServer {
   private void handleRequest(HttpExchange exchange) throws IOException {
     String path = exchange.getRequestURI().getPath();
     String method = exchange.getRequestMethod();
+    String query = exchange.getRequestURI().getQuery();
 
     try {
+      Map<String, String> params = FormDataParser.parse(query);
+
       if (Set.of("/styles.css", "/script.js").contains(path)) {
         serveStaticFile(exchange, path);
         return;
@@ -64,6 +67,11 @@ public class TaskWebServer implements WebServer {
 
       if (path.equals("/")) {
         serveHome(exchange);
+        return;
+      }
+
+      if (path.equals("/search") && params.size() == 1 && params.get("keyword") != null) {
+        serveSearch(exchange, params.get("keyword"));
         return;
       }
 
@@ -81,6 +89,12 @@ public class TaskWebServer implements WebServer {
     } catch (Exception e) {
       serve500(exchange, e.getMessage());
     }
+  }
+
+  private void serveSearch(HttpExchange exchange, String keyword) throws Exception {
+    List<Task> tasks = repository.searchTasks(keyword, 100);
+    String html = renderer.renderHome(tasks);
+    sendResponse(exchange, 200, "text/html; charset=UTF-8", html.getBytes());
   }
 
   private void serveHome(HttpExchange exchange) throws Exception {

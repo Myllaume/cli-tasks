@@ -12,10 +12,18 @@ public class TaskHtmlRenderer {
   }
 
   public String renderHome(List<Task> tasks) {
-    StringBuilder listItems = new StringBuilder();
+    StringBuilder taskLines = new StringBuilder();
     for (Task task : tasks) {
       String desc = StringUtils.escapeHtml(task.getDescription());
-      listItems.append("<li>").append(desc).append("</li>");
+      taskLines
+          .append("<tr>")
+          .append("<td>")
+          .append(desc)
+          .append("</td>")
+          .append("<td>")
+          .append(task.getPriority().getLabel())
+          .append("</td>")
+          .append("</tr>");
     }
 
     return """
@@ -30,15 +38,36 @@ public class TaskHtmlRenderer {
           <div class="container">
             <h1>Hello World!</h1>
             <a href="/form">Ajouter une tâche</a>
-            <ul>%s</ul>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Description</th>
+                  <th scope="col">Priorité</th>
+                </tr>
+              </thead>
+              <tbody>%s</tbody>
+            </table>
           </div>
         </body>
         </html>
         """
-        .formatted(listItems);
+        .formatted(taskLines);
   }
 
   public String renderForm() {
+    StringBuilder priorityOptions = new StringBuilder();
+    for (TaskPriority p : TaskPriority.values()) {
+      priorityOptions
+          .append("<option ")
+          .append("value=")
+          .append("\"")
+          .append(p.getLevel())
+          .append("\"")
+          .append(" >")
+          .append(p.getLabel())
+          .append("</option>");
+    }
+
     return """
         <!DOCTYPE html>
         <html>
@@ -50,15 +79,17 @@ public class TaskHtmlRenderer {
         <body>
           <div class="container">
             <form method="POST" action="/add-tasks">
-              <label for="description">Description de la tâche :</label>
+              <label for="description">Description :</label>
               <input type="text" id="description" name="description" required>
+              <label for="priority">Priorité :</label>
+              <select id="priority" name="priority">%s</select>
               <input type="submit" value="Ajouter la tâche">
             </form>
           </div>
         </body>
         </html>
         """
-        .formatted();
+        .formatted(priorityOptions);
   }
 
   public String render404() {
@@ -77,7 +108,7 @@ public class TaskHtmlRenderer {
         """;
   }
 
-  public String render500() {
+  public String render500(String message) {
     return """
         <!DOCTYPE html>
         <html>
@@ -89,8 +120,11 @@ public class TaskHtmlRenderer {
         <body>
           <h1>500 - Erreur serveur</h1>
           <p>Une erreur s'est produite lors du traitement de votre requête.</p>
+          <pre>%s</pre>
+          <a href="/">Retour à la racine</a>
         </body>
         </html>
-        """;
+        """
+        .formatted(message);
   }
 }

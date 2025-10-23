@@ -80,7 +80,7 @@ public class TaskWebServer implements WebServer {
 
       serve404(exchange);
     } catch (Exception e) {
-      serve500(exchange);
+      serve500(exchange, e.getMessage());
     }
   }
 
@@ -101,14 +101,13 @@ public class TaskWebServer implements WebServer {
 
     Map<String, String> formData = parseFormData(body);
     String description = formData.get("description");
+    int priorityLevel = Integer.parseInt(formData.get("priority"));
 
-    if (description != null && !description.isEmpty()) {
+    TaskData taskData =
+        TaskData.of(
+            description, false, TaskPriority.fromLevel(priorityLevel), Instant.now(), null, null);
 
-      TaskData taskData =
-          TaskData.of(description, false, TaskPriority.LOW, Instant.now(), null, null);
-
-      taskManager.createTaskOnCurrentProject(taskData);
-    }
+    taskManager.createTaskOnCurrentProject(taskData);
 
     exchange.getResponseHeaders().set("Location", "/");
     exchange.sendResponseHeaders(302, -1);
@@ -137,8 +136,8 @@ public class TaskWebServer implements WebServer {
     sendResponse(exchange, 404, "text/html; charset=UTF-8", html.getBytes());
   }
 
-  private void serve500(HttpExchange exchange) throws IOException {
-    String html = renderer.render500();
+  private void serve500(HttpExchange exchange, String message) throws IOException {
+    String html = renderer.render500(message);
     sendResponse(exchange, 500, "text/html; charset=UTF-8", html.getBytes());
   }
 

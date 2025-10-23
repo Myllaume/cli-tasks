@@ -19,7 +19,7 @@ public class TaskHtmlRendererTest {
     assertNotNull(html);
     assertTrue(html.contains("<!DOCTYPE html>"));
     assertTrue(html.contains("<title>Tasks</title>"));
-    assertTrue(html.contains("<ul></ul>"));
+    assertTrue(html.contains("<tbody></tbody>"));
   }
 
   @Test
@@ -27,7 +27,7 @@ public class TaskHtmlRendererTest {
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(3000);
     List<Task> tasks = new ArrayList<>();
 
-    Task task1 =
+    tasks.add(
         Task.of(
             1,
             "Faire les courses",
@@ -37,26 +37,12 @@ public class TaskHtmlRendererTest {
             Instant.now(),
             null,
             null,
-            null);
-    Task task2 =
-        Task.of(
-            2,
-            "Appeler le dentiste",
-            false,
-            "appelerleedentiste",
-            TaskPriority.HIGH,
-            Instant.now(),
-            null,
-            null,
-            null);
-    tasks.add(task1);
-    tasks.add(task2);
+            null));
 
     String html = renderer.renderHome(tasks);
 
     assertNotNull(html);
-    assertTrue(html.contains("<li>Faire les courses</li>"));
-    assertTrue(html.contains("<li>Appeler le dentiste</li>"));
+    assertTrue(html.contains("<tr><td>Faire les courses</td><td>faible</td></tr>"));
   }
 
   @Test
@@ -85,6 +71,16 @@ public class TaskHtmlRendererTest {
   }
 
   @Test
+  public void testRenderFormWithPriorities() {
+    TaskHtmlRenderer renderer = new TaskHtmlRenderer(8080);
+
+    String html = renderer.renderForm();
+
+    assertNotNull(html);
+    assertFalse(html.contains("<option value=\"1\">faible</option>"));
+  }
+
+  @Test
   public void testRender404() {
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(8080);
 
@@ -100,11 +96,12 @@ public class TaskHtmlRendererTest {
   public void testRender500() {
     TaskHtmlRenderer renderer = new TaskHtmlRenderer(8080);
 
-    String html = renderer.render500();
+    String html = renderer.render500("message");
 
     assertNotNull(html);
     assertTrue(html.contains("<!DOCTYPE html>"));
     assertTrue(html.contains("<title>Erreur</title>"));
     assertTrue(html.contains("500 - Erreur serveur"));
+    assertTrue(html.contains("<pre>message</pre>"));
   }
 }

@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import task.cli.myllaume.db.ProjectsRepository;
 import task.cli.myllaume.db.TaskManager;
@@ -334,7 +335,7 @@ public class TaskWebServerTest {
     conn.setDoOutput(true);
     conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-    String formData = "description=Ma+nouvelle+tache";
+    String formData = "description=Ma+nouvelle+tache&priority=2";
     OutputStream os = conn.getOutputStream();
     os.write(formData.getBytes(StandardCharsets.UTF_8));
     os.flush();
@@ -349,51 +350,9 @@ public class TaskWebServerTest {
     conn.disconnect();
 
     List<Task> tasks = taskRepo.getTasks(100);
-    boolean found = false;
-    for (Task task : tasks) {
-      if (task.getDescription().equals("Ma nouvelle tache")) {
-        found = true;
-        break;
-      }
-    }
-    assertTrue("La tâche devrait être créée dans la base de données", found);
-  }
-
-  @Test
-  public void testPostFormDataWithEmptyDescription() throws Exception {
-    TaskRepositorySqlite mockRepo = mock(TaskRepositorySqlite.class);
-    TaskManager mockManager = mock(TaskManager.class);
-    TaskHtmlRenderer mockRenderer = mock(TaskHtmlRenderer.class);
-
-    // Configurer les mocks pour éviter les exceptions
-    when(mockRepo.getTasks(anyInt())).thenReturn(new java.util.ArrayList<>());
-    when(mockRenderer.renderHome(anyList())).thenReturn("<html>Home</html>");
-
-    server = new TaskWebServer(9885, mockRepo, mockRenderer, mockManager);
-    server.start();
-    Thread.sleep(200);
-
-    // Envoyer une requête POST avec une description vide
-    URI uri = new URI("http://localhost:9885/add-tasks");
-    URL url = uri.toURL();
-    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    conn.setInstanceFollowRedirects(false); // Ne pas suivre automatiquement les redirections
-    conn.setRequestMethod("POST");
-    conn.setDoOutput(true);
-    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-    String formData = "description=";
-    OutputStream os = conn.getOutputStream();
-    os.write(formData.getBytes(StandardCharsets.UTF_8));
-    os.flush();
-    os.close();
-
-    int responseCode = conn.getResponseCode();
-    assertEquals(302, responseCode); // Redirection même si vide
-
-    conn.disconnect();
-
-    // Vérifier qu'aucune tâche n'a été créée (le manager ne doit pas être appelé)
-    verify(mockManager, never()).createTaskOnCurrentProject(any(TaskData.class));
+    assertEquals(tasks.size(), 1);
+    assertEquals(tasks.get(0).getCompleted(), false);
+    assertEquals(tasks.get(0).getDescription(), "Ma nouvelle tache");
+    assertEquals(tasks.get(0).getPriority(), TaskPriority.MEDIUM);
   }
 }

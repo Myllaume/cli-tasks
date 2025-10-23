@@ -21,7 +21,6 @@ public class CsvErrorTest {
   @Test
   public void testToString() {
     CsvError error = new CsvError(1, "Erreur de format");
-    ;
     assertEquals("Ligne 1 : Erreur de format", error.toString());
   }
 }

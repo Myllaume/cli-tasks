@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import task.cli.myllaume.db.ProjectsRepository;
 import task.cli.myllaume.db.TaskManager;

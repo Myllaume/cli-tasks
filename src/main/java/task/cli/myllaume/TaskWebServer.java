@@ -6,14 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import task.cli.myllaume.db.TaskManager;
+import task.cli.myllaume.utils.FormDataParser;
 
 public class TaskWebServer implements WebServer {
 
@@ -99,7 +98,7 @@ public class TaskWebServer implements WebServer {
     InputStream requestBody = exchange.getRequestBody();
     String body = new String(requestBody.readAllBytes(), StandardCharsets.UTF_8);
 
-    Map<String, String> formData = parseFormData(body);
+    Map<String, String> formData = FormDataParser.parse(body);
     String description = formData.get("description");
     int priorityLevel = Integer.parseInt(formData.get("priority"));
 
@@ -111,24 +110,6 @@ public class TaskWebServer implements WebServer {
 
     exchange.getResponseHeaders().set("Location", "/");
     exchange.sendResponseHeaders(302, -1);
-  }
-
-  private Map<String, String> parseFormData(String formData) {
-    Map<String, String> result = new HashMap<>();
-    if (formData == null || formData.isEmpty()) {
-      return result;
-    }
-
-    String[] pairs = formData.split("&");
-    for (String pair : pairs) {
-      String[] keyValue = pair.split("=", 2);
-      if (keyValue.length == 2) {
-        String key = URLDecoder.decode(keyValue[0], StandardCharsets.UTF_8);
-        String value = URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
-        result.put(key, value);
-      }
-    }
-    return result;
   }
 
   private void serve404(HttpExchange exchange) throws IOException {

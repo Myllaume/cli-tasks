@@ -26,12 +26,12 @@ public class TaskManager {
     return taskRepo.createTask(data, currentProject.getId());
   }
 
-  public void importFromCsvOnCurrentProject(String csvPath) throws Exception {
+  public int importFromCsvOnCurrentProject(String csvPath) throws Exception {
     ProjectDb currentProject = projectsRepo.getCurrentProject();
     if (currentProject == null) {
       throw new Exception("No current project set.");
     }
 
-    taskRepo.importFromCsv(csvPath, currentProject.getId());
+    return taskRepo.importFromCsv(csvPath, currentProject.getId());
   }
 }

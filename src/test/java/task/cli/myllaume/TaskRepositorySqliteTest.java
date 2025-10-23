@@ -199,11 +199,15 @@ public class TaskRepositorySqliteTest {
     File importedFile = new File("src/test/resources/many.csv");
     File exportedFile = new File(tempDir.toString() + "/many_exported.csv");
 
+    ProjectsRepository repoProjects = new ProjectsRepository(tempDir.toString());
+    repoProjects.initTables();
+    ProjectDb project = repoProjects.createProject(defaultProject);
     TaskRepositorySqlite repo = new TaskRepositorySqlite(tempDir.toString());
-    repo.initTables();
-    TaskManager manager = getManager(tempDir.toString());
 
-    manager.importFromCsvOnCurrentProject(importedFile.getAbsolutePath());
+    int count = repo.importFromCsv(importedFile.getAbsolutePath(), project.getId());
+
+    assertEquals(52, count);
+
     repo.exportToCsv(exportedFile.getAbsolutePath(), 100, true);
 
     assertTrue("Exported file should exist", exportedFile.exists());

@@ -460,7 +460,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     return executeCountQuery("SELECT COUNT(*) AS total FROM tasks WHERE completed = 1");
   }
 
-  public void importFromCsv(String csvPath, int projectId) throws Exception {
+  public int importFromCsv(String csvPath, int projectId) throws Exception {
     ArrayList<TaskCsv> tasks;
 
     try {
@@ -471,6 +471,8 @@ public class TaskRepositorySqlite extends DatabaseRepository {
     }
 
     Instant now = Instant.now();
+
+    int importedCount = 0;
 
     String sql =
         """
@@ -494,9 +496,12 @@ public class TaskRepositorySqlite extends DatabaseRepository {
           pstmt.setInt(6, TaskPriority.LOW.getLevel());
           pstmt.setInt(7, projectId);
           pstmt.addBatch();
+
+          importedCount++;
         }
         pstmt.executeBatch();
         conn.commit();
+
       } catch (Exception e) {
         conn.rollback();
         throw e;
@@ -504,6 +509,8 @@ public class TaskRepositorySqlite extends DatabaseRepository {
         conn.setAutoCommit(true);
       }
     }
+
+    return importedCount;
   }
 
   public void exportToCsv(String csvPath, int limit, boolean overwrite) throws Exception {

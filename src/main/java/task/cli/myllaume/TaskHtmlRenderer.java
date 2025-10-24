@@ -6,6 +6,15 @@ import task.cli.myllaume.utils.StringUtils;
 public class TaskHtmlRenderer {
 
   private final int port;
+  private static String metas =
+      """
+      <meta charset="UTF-8" />
+      <link rel="stylesheet" href="styles.css" />
+      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />      <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+      <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+      <meta http-equiv="X-Frame-Options" content="DENY" />
+      <meta name="referrer" content="strict-origin-when-cross-origin" />
+      """;
 
   public TaskHtmlRenderer(int port) {
     this.port = port;
@@ -18,7 +27,7 @@ public class TaskHtmlRenderer {
       taskLines
           .append("<tr>")
           .append("<td>")
-          .append(task.getCompleted() ? "✅" : "⬜️" )
+          .append(task.getCompleted() ? "✅" : "⬜️")
           .append("</td>")
           .append("<td>")
           .append(desc)
@@ -33,9 +42,8 @@ public class TaskHtmlRenderer {
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="UTF-8">
+          %s
           <title>Tasks</title>
-          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <div class="container">
@@ -60,7 +68,7 @@ public class TaskHtmlRenderer {
         </body>
         </html>
         """
-        .formatted(taskLines);
+        .formatted(metas, taskLines);
   }
 
   public String renderForm() {
@@ -81,9 +89,8 @@ public class TaskHtmlRenderer {
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="UTF-8">
+          %s
           <title>Tasks</title>
-          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <div class="container">
@@ -98,7 +105,7 @@ public class TaskHtmlRenderer {
         </body>
         </html>
         """
-        .formatted(priorityOptions);
+        .formatted(metas, priorityOptions);
   }
 
   public String render404() {
@@ -106,15 +113,15 @@ public class TaskHtmlRenderer {
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="UTF-8">
+          %s
           <title>404 Not Found</title>
-          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <h1>404 - Page non trouvée</h1>
         </body>
         </html>
-        """;
+        """
+        .formatted(metas);
   }
 
   public String render500(String message) {
@@ -122,9 +129,8 @@ public class TaskHtmlRenderer {
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="UTF-8">
+          %s
           <title>Erreur</title>
-          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <h1>500 - Erreur serveur</h1>
@@ -134,6 +140,6 @@ public class TaskHtmlRenderer {
         </body>
         </html>
         """
-        .formatted(message);
+        .formatted(metas, message);
   }
 }

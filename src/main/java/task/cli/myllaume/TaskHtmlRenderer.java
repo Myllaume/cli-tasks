@@ -15,6 +15,9 @@ public class TaskHtmlRenderer {
       <meta http-equiv="X-Frame-Options" content="DENY" />
       <meta name="referrer" content="strict-origin-when-cross-origin" />
       """;
+  private static String scripts = """
+      <script src="script.js"></script>
+      """;
 
   public TaskHtmlRenderer(int port) {
     this.port = port;
@@ -65,10 +68,12 @@ public class TaskHtmlRenderer {
               <tbody>%s</tbody>
             </table>
           </div>
+
+          %s
         </body>
         </html>
         """
-        .formatted(metas, taskLines);
+        .formatted(metas, taskLines, scripts);
   }
 
   public String renderForm() {
@@ -102,10 +107,12 @@ public class TaskHtmlRenderer {
               <input type="submit" value="Ajouter la tâche">
             </form>
           </div>
+
+          %s
         </body>
         </html>
         """
-        .formatted(metas, priorityOptions);
+        .formatted(metas, priorityOptions, scripts);
   }
 
   public String render404() {

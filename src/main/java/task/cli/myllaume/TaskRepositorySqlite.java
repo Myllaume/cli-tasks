@@ -476,8 +476,6 @@ public class TaskRepositorySqlite extends DatabaseRepository {
 
     Instant now = Instant.now();
 
-    
-
     String sql =
         """
         INSERT INTO tasks (name, completed, fulltext, created_at, due_at, priority, project_id)
@@ -500,7 +498,7 @@ public class TaskRepositorySqlite extends DatabaseRepository {
           pstmt.setInt(6, TaskPriority.LOW.getLevel());
           pstmt.setInt(7, projectId);
           pstmt.addBatch();
-          
+
           count++;
         }
         pstmt.executeBatch();

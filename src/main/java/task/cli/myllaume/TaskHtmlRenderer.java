@@ -18,6 +18,9 @@ public class TaskHtmlRenderer {
       taskLines
           .append("<tr>")
           .append("<td>")
+          .append(task.getCompleted() ? "✅" : "⬜️" )
+          .append("</td>")
+          .append("<td>")
           .append(desc)
           .append("</td>")
           .append("<td>")
@@ -46,6 +49,7 @@ public class TaskHtmlRenderer {
             <table>
               <thead>
                 <tr>
+                  <th scope="col">Terminé</th>
                   <th scope="col">Description</th>
                   <th scope="col">Priorité</th>
                 </tr>

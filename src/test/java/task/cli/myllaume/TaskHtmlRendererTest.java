@@ -42,7 +42,7 @@ public class TaskHtmlRendererTest {
     String html = renderer.renderHome(tasks);
 
     assertNotNull(html);
-    assertTrue(html.contains("<tr><td>Faire les courses</td><td>faible</td></tr>"));
+    assertTrue(html.contains("<tr><td>⬜️</td><td>Faire les courses</td><td>faible</td></tr>"));
   }
 
   @Test

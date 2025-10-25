@@ -75,6 +75,11 @@ public class TaskWebServer implements WebServer {
         return;
       }
 
+      if (path.equals("/task") && params.size() == 1 && params.get("id") != null) {
+        serveSearch(exchange, params.get("keyword"));
+        return;
+      }
+
       if (path.equals("/form")) {
         serveForm(exchange);
         return;
@@ -92,6 +97,12 @@ public class TaskWebServer implements WebServer {
   }
 
   private void serveSearch(HttpExchange exchange, String keyword) throws Exception {
+    List<Task> tasks = repository.searchTasks(keyword, 100);
+    String html = renderer.renderHome(tasks);
+    sendResponse(exchange, 200, "text/html; charset=UTF-8", html.getBytes());
+  }
+
+  private void serveTask(HttpExchange exchange, String keyword) throws Exception {
     List<Task> tasks = repository.searchTasks(keyword, 100);
     String html = renderer.renderHome(tasks);
     sendResponse(exchange, 200, "text/html; charset=UTF-8", html.getBytes());

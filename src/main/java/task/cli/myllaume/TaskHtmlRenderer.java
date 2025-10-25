@@ -76,6 +76,34 @@ public class TaskHtmlRenderer {
         .formatted(metas, taskLines, scripts);
   }
 
+  public String renderTask(Task task) {
+ 
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          %s
+          <title>Task %s</title>
+        </head>
+        <body>
+          <div class="container">
+            <form method="POST" action="/add-tasks">
+              <label for="description">Description :</label>
+              <input type="text" id="description" name="description" required>
+              <label for="priority">Priorité :</label>
+              <select id="priority" name="priority">%s</select>
+              <input type="submit" value="Ajouter la tâche">
+            </form>
+          </div>
+
+          %s
+        </body>
+        </html>
+        """
+        .formatted(metas, task.getDescription(), scripts);
+  }
+
   public String renderForm() {
     StringBuilder priorityOptions = new StringBuilder();
     for (TaskPriority p : TaskPriority.values()) {
